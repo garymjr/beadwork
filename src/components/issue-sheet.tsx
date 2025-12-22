@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Loader2, Trash2, MessageSquare, Link as LinkIcon, Plus, X, Sparkles } from 'lucide-react'
+import { Loader2, Trash2, MessageSquare, Link as LinkIcon, Plus, X, Sparkles, Copy } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { 
   updateBead, 
@@ -41,6 +41,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
   const [dependencies, setDependencies] = useState<Dependency[]>([])
   const [newComment, setNewComment] = useState('')
   const [newDepId, setNewDepId] = useState('')
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   useEffect(() => {
     if (bead) {
@@ -170,6 +171,17 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
     }
   }
 
+  const handleCopyId = async () => {
+    if (!bead) return
+    try {
+      await navigator.clipboard.writeText(bead.id)
+      setCopiedId(bead.id)
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   if (!bead) return null
 
   return (
@@ -181,7 +193,17 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
         </VisuallyHidden>
         <SheetHeader className="mb-4 shrink-0">
           <div className="flex items-center justify-between">
-            <Badge variant="outline">{bead.id}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{bead.id}</Badge>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleCopyId} 
+                className="h-6 w-6 hover:bg-transparent hover:text-accent"
+              >
+                <Copy className={`h-3 w-3 ${copiedId === bead.id ? "text-green-600" : ""}`} />
+              </Button>
+            </div>
             <Button variant="ghost" size="icon" onClick={handleDelete} className="text-red-500 hover:text-red-600">
               <Trash2 className="h-4 w-4" />
             </Button>
