@@ -217,6 +217,18 @@ function ProjectComponent() {
   const handleCreate = async () => {
     if (!newIssueTitle.trim() && !newIssueDescription.trim()) return
     setIsCreating(true)
+    
+    const isTransient = !newIssueTitle.trim() && newIssueDescription.trim()
+    
+    // Clear form immediately
+    setNewIssueTitle('')
+    setNewIssueDescription('')
+    
+    // Close dialog immediately for transient beads, wait for regular beads
+    if (isTransient) {
+      setIsCreateOpen(false)
+    }
+    
     try {
       if (newIssueTitle.trim()) {
         // If title is provided, create normally
@@ -227,21 +239,20 @@ function ProjectComponent() {
             description: newIssueDescription || undefined 
           } 
         })
+        // Close dialog after successful regular bead creation
+        setIsCreateOpen(false)
+        router.invalidate()
       } else if (newIssueDescription.trim()) {
         // If only description is provided, create transient bead
-        await createTransientBead(newIssueDescription)
-      }
-      
-      setNewIssueTitle('')
-      setNewIssueDescription('')
-      setIsCreateOpen(false)
-      
-      // Only invalidate if we created a regular bead
-      if (newIssueTitle.trim()) {
-        router.invalidate()
+        // Dialog already closed, just start the creation process
+        createTransientBead(newIssueDescription).catch(console.error)
       }
     } catch (e) {
       console.error(e)
+      // Close dialog on error for regular beads
+      if (!isTransient) {
+        setIsCreateOpen(false)
+      }
     } finally {
       setIsCreating(false)
     }
