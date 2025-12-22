@@ -20,6 +20,13 @@ potential weak spot.
 
 - Prefer: Read (known paths) → Explore agent (patterns/architecture) → Grep/Glob (content/name)
 
+## Package Management
+
+- Always use `bun` instead of `npm`
+- For installation: `bun install`
+- For scripts: `bun run <script>`
+- For adding packages: `bun add <package>`
+
 ## Git Patterns
 
 - Never commit unless I ask
