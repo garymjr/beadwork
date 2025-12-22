@@ -112,10 +112,9 @@ export const createPlan = createServerFn({ method: 'POST' })
         data.projectPath
       )
 
-      // 1. Add plan as comment
-      await runBd(['comments', 'add', data.id, planResult.plan], data.projectPath)
 
-      // 2. Create subtasks and add as dependencies
+
+      // 1. Create subtasks and add as dependencies
       for (const subtask of planResult.subtasks) {
         const args = ['create', subtask.title]
         if (subtask.description) args.push('--description', subtask.description)
