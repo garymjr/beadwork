@@ -24,7 +24,7 @@ export function KanbanBoard({ beads, onBeadClick }: KanbanBoardProps) {
   return (
     <div className="flex h-full gap-4 overflow-x-auto pb-4">
       {COLUMNS.map(col => (
-        <div key={col.id} className="w-80 flex-shrink-0 flex flex-col bg-muted/10 rounded-lg border">
+        <div key={col.id} className="flex-1 min-w-[200px] flex flex-col bg-muted/10 rounded-lg border">
           <div className="p-3 font-semibold text-sm flex items-center justify-between">
             {col.label}
             <Badge variant="secondary" className="text-xs">
