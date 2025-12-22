@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { spawn } from 'child_process'
 
 const CONFIG_FILE = 'beadwork.projects.json'
 
@@ -39,8 +40,9 @@ export const getProject = createServerFn({ method: 'GET' })
   })
 
 export const addProject = createServerFn({ method: 'POST' })
-  .inputValidator((path: string) => path)
-  .handler(async ({ data: projectPath }) => {
+  .inputValidator((data: { path: string, init?: boolean }) => data)
+  .handler(async ({ data }) => {
+    const projectPath = data.path
     const projects = await getProjectsData()
     
     // Validate path exists and has .beads
@@ -49,9 +51,27 @@ export const addProject = createServerFn({ method: 'POST' })
       if (!stat.isDirectory()) throw new Error('Not a directory')
       
       const beadsPath = path.join(projectPath, '.beads')
-      await fs.access(beadsPath)
-    } catch (e) {
-      throw new Error('Invalid beads project: ' + projectPath)
+      try {
+        await fs.access(beadsPath)
+      } catch (e) {
+        if (data.init) {
+          await new Promise((resolve, reject) => {
+            const proc = spawn('bd', ['init'], { cwd: projectPath })
+            proc.on('close', (code) => {
+              if (code === 0) resolve(null)
+              else reject(new Error('Failed to initialize beads'))
+            })
+            proc.on('error', reject)
+          })
+        } else {
+          throw new Error('PROJECT_NEEDS_INIT')
+        }
+      }
+    } catch (e: any) {
+      if (e.message === 'PROJECT_NEEDS_INIT') {
+        throw e
+      }
+      throw new Error('Invalid beads project: ' + (e.message || projectPath))
     }
 
     const name = path.basename(projectPath)

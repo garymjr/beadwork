@@ -44,12 +44,27 @@ export function ProjectSidebar({ projects }: { projects: Project[] }) {
 
   const handleAdd = async () => {
     try {
-      await addProject({ data: path })
+      await addProject({ data: { path } })
       setIsOpen(false)
       setPath('')
       setError('')
       router.invalidate()
-    } catch (e) {
+    } catch (e: any) {
+      if (e.message.includes('PROJECT_NEEDS_INIT')) {
+        if (confirm('Project needs initialization. Initialize beads?')) {
+          try {
+            await addProject({ data: { path, init: true } })
+            setIsOpen(false)
+            setPath('')
+            setError('')
+            router.invalidate()
+            return
+          } catch (initErr: any) {
+            setError(initErr.message)
+            return
+          }
+        }
+      }
       setError((e as Error).message)
     }
   }

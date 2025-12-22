@@ -1,118 +1,182 @@
-import { createFileRoute } from '@tanstack/react-router'
-import {
-  Zap,
-  Server,
-  Route as RouteIcon,
-  Shield,
-  Waves,
-  Sparkles,
-} from 'lucide-react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { getProjects, addProject, type Project } from '@/server/projects'
+import { getProjectStats } from '@/server/beads'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Folder, Plus, ArrowRight, Github, FolderOpen } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { DirectoryPicker } from '@/components/directory-picker'
+import { Input } from '@/components/ui/input'
+import { useRouter } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute('/')({
+  loader: async () => {
+    const projects = await getProjects()
+    return { projects }
+  },
+  component: Dashboard
+})
 
-function App() {
-  const features = [
-    {
-      icon: <Zap className="w-12 h-12 text-cyan-400" />,
-      title: 'Powerful Server Functions',
-      description:
-        'Write server-side code that seamlessly integrates with your client components. Type-safe, secure, and simple.',
-    },
-    {
-      icon: <Server className="w-12 h-12 text-cyan-400" />,
-      title: 'Flexible Server Side Rendering',
-      description:
-        'Full-document SSR, streaming, and progressive enhancement out of the box. Control exactly what renders where.',
-    },
-    {
-      icon: <RouteIcon className="w-12 h-12 text-cyan-400" />,
-      title: 'API Routes',
-      description:
-        'Build type-safe API endpoints alongside your application. No separate backend needed.',
-    },
-    {
-      icon: <Shield className="w-12 h-12 text-cyan-400" />,
-      title: 'Strongly Typed Everything',
-      description:
-        'End-to-end type safety from server to client. Catch errors before they reach production.',
-    },
-    {
-      icon: <Waves className="w-12 h-12 text-cyan-400" />,
-      title: 'Full Streaming Support',
-      description:
-        'Stream data from server to client progressively. Perfect for AI applications and real-time updates.',
-    },
-    {
-      icon: <Sparkles className="w-12 h-12 text-cyan-400" />,
-      title: 'Next Generation Ready',
-      description:
-        'Built from the ground up for modern web applications. Deploy anywhere JavaScript runs.',
-    },
-  ]
+function Dashboard() {
+  const { projects } = Route.useLoaderData()
+  const router = useRouter()
+  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [showPicker, setShowPicker] = useState(false)
+  const [newPath, setNewPath] = useState('')
+  const [error, setError] = useState('')
+
+  const handleAdd = async () => {
+    try {
+      await addProject({ data: { path: newPath } })
+      setIsAddOpen(false)
+      setNewPath('')
+      setError('')
+      router.invalidate()
+    } catch (e: any) {
+      if (e.message.includes('PROJECT_NEEDS_INIT')) {
+        if (confirm('Project needs initialization. Initialize beads?')) {
+          try {
+            await addProject({ data: { path: newPath, init: true } })
+            setIsAddOpen(false)
+            setNewPath('')
+            setError('')
+            router.invalidate()
+            return
+          } catch (initErr: any) {
+            setError(initErr.message)
+            return
+          }
+        }
+      }
+      setError((e as Error).message)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-      <section className="relative py-20 px-6 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10"></div>
-        <div className="relative max-w-5xl mx-auto">
-          <div className="flex items-center justify-center gap-6 mb-6">
-            <img
-              src="/tanstack-circle-logo.png"
-              alt="TanStack Logo"
-              className="w-24 h-24 md:w-32 md:h-32"
-            />
-            <h1 className="text-6xl md:text-7xl font-black text-white [letter-spacing:-0.08em]">
-              <span className="text-gray-300">TANSTACK</span>{' '}
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                START
-              </span>
-            </h1>
-          </div>
-          <p className="text-2xl md:text-3xl text-gray-300 mb-4 font-light">
-            The framework for next generation AI applications
-          </p>
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto mb-8">
-            Full-stack framework powered by TanStack Router for React and Solid.
-            Build modern applications with server functions, streaming, and type
-            safety.
-          </p>
-          <div className="flex flex-col items-center gap-4">
-            <a
-              href="https://tanstack.com/start"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-lg transition-colors shadow-lg shadow-cyan-500/50"
-            >
-              Documentation
-            </a>
-            <p className="text-gray-400 text-sm mt-2">
-              Begin your TanStack Start journey by editing{' '}
-              <code className="px-2 py-1 bg-slate-700 rounded text-cyan-400">
-                /src/routes/index.tsx
-              </code>
-            </p>
-          </div>
-        </div>
-      </section>
+    <div className="p-8 max-w-5xl mx-auto space-y-8">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">Welcome to BeadWork</h1>
+        <p className="text-muted-foreground text-lg">
+          Manage your local issue tracking with ease. Select a project to get started.
+        </p>
+      </div>
 
-      <section className="py-16 px-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/10"
-            >
-              <div className="mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold text-white mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
-          ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Dialog open={isAddOpen} onOpenChange={(open) => {
+          setIsAddOpen(open)
+          if (!open) setShowPicker(false)
+        }}>
+          <DialogTrigger asChild>
+            <button className="flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors gap-4 group">
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                <Plus className="h-6 w-6" />
+              </div>
+              <span className="font-medium text-muted-foreground group-hover:text-foreground">Add Project</span>
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{showPicker ? 'Select Directory' : 'Add Project Repository'}</DialogTitle>
+            </DialogHeader>
+            {showPicker ? (
+              <DirectoryPicker 
+                onSelect={(path) => {
+                  setNewPath(path)
+                  setShowPicker(false)
+                }} 
+                onCancel={() => setShowPicker(false)} 
+              />
+            ) : (
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <label htmlFor="path">Project Path</label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="path"
+                      placeholder="/path/to/repo"
+                      value={newPath}
+                      onChange={(e) => setNewPath(e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" onClick={() => setShowPicker(true)}>
+                      <FolderOpen className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Must contain a .beads directory
+                  </p>
+                  {error && <p className="text-sm text-red-500">{error}</p>}
+                </div>
+                <Button onClick={handleAdd}>Add Project</Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {projects.map((project) => (
+          <ProjectCard key={project.id} project={project} />
+        ))}
+      </div>
+
+      {projects.length === 0 && (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
+          <p className="text-muted-foreground">
+            Initialize a repository with <code className="bg-muted px-1 py-0.5 rounded">beads init</code> then add it here.
+          </p>
         </div>
-      </section>
+      )}
     </div>
+  )
+}
+
+function ProjectCard({ project }: { project: Project }) {
+  const [stats, setStats] = useState<any>(null)
+
+  useEffect(() => {
+    getProjectStats({ data: project.path }).then(setStats)
+  }, [project.path])
+
+  return (
+    <Link 
+      to="/project/$projectId" 
+      params={{ projectId: project.id }}
+      className="block"
+    >
+      <Card className="h-48 hover:border-primary transition-colors cursor-pointer relative overflow-hidden group">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Folder className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="truncate">{project.name}</span>
+          </CardTitle>
+          <CardDescription className="truncate font-mono text-xs">
+            {project.path}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stats ? (
+            <div className="flex gap-4">
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold">{stats.summary?.open_issues ?? 0}</span>
+                <span className="text-xs text-muted-foreground">Open</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold">{stats.summary?.closed_issues ?? 0}</span>
+                <span className="text-xs text-muted-foreground">Closed</span>
+              </div>
+            </div>
+          ) : (
+            <div className="animate-pulse space-y-2">
+              <div className="h-8 w-16 bg-muted rounded"></div>
+              <div className="h-3 w-12 bg-muted rounded"></div>
+            </div>
+          )}
+          
+          <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ArrowRight className="h-5 w-5 text-primary" />
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   )
 }
