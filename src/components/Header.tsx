@@ -12,38 +12,43 @@ export default function Header() {
 
   return (
     <>
-      <header className="p-4 flex items-center bg-gray-800 text-white shadow-lg">
+      <header className="p-4 flex items-center bg-gradient-to-r from-primary via-purple-600 to-accent text-white shadow-xl backdrop-blur-sm border-b border-border/20">
         <button
           onClick={() => setIsOpen(true)}
-          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+          className="p-2 hover:bg-white/20 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
           aria-label="Open menu"
         >
-          <Menu size={24} />
+          <Menu size={24} className="drop-shadow-sm" />
         </button>
-        <h1 className="ml-4 text-xl font-semibold">
-          <Link to="/">
+        <h1 className="ml-4 text-xl font-bold tracking-wide">
+          <Link to="/" className="hover:scale-105 transition-transform duration-300 inline-block">
             <img
               src="/tanstack-word-logo-white.svg"
               alt="TanStack Logo"
-              className="h-10"
+              className="h-10 drop-shadow-md"
             />
           </Link>
         </h1>
+        <div className="ml-auto flex items-center gap-2">
+          <div className="w-2 h-2 bg-emphasis rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-highlight rounded-full animate-pulse delay-75"></div>
+          <div className="w-2 h-2 bg-success rounded-full animate-pulse delay-150"></div>
+        </div>
       </header>
 
       <aside
-        className={`fixed top-0 left-0 h-full w-80 bg-gray-900 text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
+        className={`fixed top-0 left-0 h-full w-80 bg-gradient-to-b from-primary via-purple-900 to-accent text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col backdrop-blur-md border-r border-border/30 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <h2 className="text-xl font-bold">Navigation</h2>
+        <div className="flex items-center justify-between p-4 border-b border-white/20 bg-white/5 backdrop-blur-sm">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-white to-accent bg-clip-text text-transparent">Navigation</h2>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-white/20 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
             aria-label="Close menu"
           >
-            <X size={24} />
+            <X size={24} className="drop-shadow-sm" />
           </button>
         </div>
 
@@ -51,17 +56,25 @@ export default function Header() {
           <Link
             to="/"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2"
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300 mb-2 hover:scale-102 hover:shadow-md backdrop-blur-sm border border-transparent hover:border-white/20"
             activeProps={{
               className:
-                'flex items-center gap-3 p-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 transition-colors mb-2',
+                'flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-emphasis to-highlight hover:from-emphasis/90 hover:to-highlight/90 transition-all duration-300 mb-2 shadow-lg border border-white/30 scale-102',
             }}
           >
-            <Home size={20} />
+            <Home size={20} className="drop-shadow-sm" />
             <span className="font-medium">Home</span>
           </Link>
         </nav>
       </aside>
+      
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+          onClick={() => setIsOpen(false)}
+          aria-label="Close sidebar overlay"
+        />
+      )}
     </>
   )
 }

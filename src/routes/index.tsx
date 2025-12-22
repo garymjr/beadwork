@@ -68,11 +68,11 @@ function Dashboard() {
           if (!open) setShowPicker(false)
         }}>
           <DialogTrigger asChild>
-            <button className="flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-xl hover:bg-muted/50 transition-colors gap-4 group">
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                <Plus className="h-6 w-6" />
+            <button className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-primary/30 rounded-xl hover:bg-gradient-to-br hover:from-primary/10 hover:to-accent/10 transition-all duration-300 gap-4 group hover:scale-105 hover:shadow-lg">
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center group-hover:from-primary/30 group-hover:to-accent/30 group-hover:scale-110 transition-all duration-300 border border-primary/20">
+                <Plus className="h-6 w-6 text-primary" />
               </div>
-              <span className="font-medium text-muted-foreground group-hover:text-foreground">Add Project</span>
+              <span className="font-medium text-muted-foreground group-hover:text-primary transition-colors">Add Project</span>
             </button>
           </DialogTrigger>
           <DialogContent>
@@ -143,37 +143,42 @@ function ProjectCard({ project }: { project: Project }) {
       params={{ projectId: project.id }}
       className="block"
     >
-      <Card className="h-48 hover:border-primary transition-colors cursor-pointer relative overflow-hidden group">
-        <CardHeader>
+      <Card className="h-48 hover:border-primary transition-all duration-300 cursor-pointer relative overflow-hidden group hover:scale-105 hover:shadow-xl bg-gradient-to-br from-white/90 to-white/50 backdrop-blur-sm border-2 hover:border-primary/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <CardHeader className="relative">
           <CardTitle className="flex items-center gap-2">
-            <Folder className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-            <span className="truncate">{project.name}</span>
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center group-hover:from-primary/30 group-hover:to-accent/30 transition-all duration-300">
+              <Folder className="h-5 w-5 text-primary" />
+            </div>
+            <span className="truncate font-bold">{project.name}</span>
           </CardTitle>
-          <CardDescription className="truncate font-mono text-xs">
+          <CardDescription className="truncate font-mono text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md">
             {project.path}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           {stats ? (
             <div className="flex gap-4">
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">{stats.summary?.open_issues ?? 0}</span>
-                <span className="text-xs text-muted-foreground">Open</span>
+              <div className="flex flex-col group-hover:scale-110 transition-transform duration-300">
+                <span className="text-2xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">{stats.summary?.open_issues ?? 0}</span>
+                <span className="text-xs text-muted-foreground font-medium">Open</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-2xl font-bold">{stats.summary?.closed_issues ?? 0}</span>
-                <span className="text-xs text-muted-foreground">Closed</span>
+              <div className="flex flex-col group-hover:scale-110 transition-transform duration-300 delay-75">
+                <span className="text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">{stats.summary?.closed_issues ?? 0}</span>
+                <span className="text-xs text-muted-foreground font-medium">Closed</span>
               </div>
             </div>
           ) : (
             <div className="animate-pulse space-y-2">
-              <div className="h-8 w-16 bg-muted rounded"></div>
-              <div className="h-3 w-12 bg-muted rounded"></div>
+              <div className="h-8 w-16 bg-gradient-to-r from-muted/50 to-muted rounded-lg"></div>
+              <div className="h-3 w-12 bg-gradient-to-r from-muted/30 to-muted/50 rounded"></div>
             </div>
           )}
           
-          <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ArrowRight className="h-5 w-5 text-primary" />
+          <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+              <ArrowRight className="h-4 w-4 text-white" />
+            </div>
           </div>
         </CardContent>
       </Card>
