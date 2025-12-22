@@ -16,10 +16,12 @@ export const getOpencode = async () => {
   return opencodeInstance.client;
 };
 
-export const generateTitle = async (description: string): Promise<string> => {
+export const generateTitle = async (description: string, projectPath?: string): Promise<string> => {
   const client = await getOpencode();
   try {
-    const sessionResponse = await client.session.create({});
+    const sessionResponse = await client.session.create({
+      query: { directory: projectPath }
+    });
     const sessionId = sessionResponse.data?.id;
 
     if (!sessionId) {
@@ -51,5 +53,71 @@ ${description}`
   } catch (e) {
     console.error("Error generating title:", e);
     return "Untitled Issue";
+  }
+};
+
+export interface PlanResult {
+  plan: string;
+  subtasks: {
+    title: string;
+    description: string;
+    type: string;
+  }[];
+}
+
+export const createPlanAction = async (
+  title: string, 
+  description: string, 
+  type: string, 
+  projectPath: string
+): Promise<PlanResult> => {
+  const client = await getOpencode();
+  try {
+    const sessionResponse = await client.session.create({
+      query: { directory: projectPath }
+    });
+    const sessionId = sessionResponse.data?.id;
+
+    if (!sessionId) {
+      throw new Error("Failed to create OpenCode session");
+    }
+
+    const prompt = `I am working on the following issue:
+Title: ${title}
+Description: ${description}
+Type: ${type}
+
+Please analyze the project files and create a detailed plan to resolve this issue.
+Provide your response in valid JSON format ONLY, with the following structure:
+{
+  "plan": "Detailed markdown plan...",
+  "subtasks": [
+    { "title": "Subtask title", "description": "Subtask description", "type": "task" },
+    ...
+  ]
+}
+Return only the JSON object, no other text.`;
+
+    const result = await client.session.prompt({
+      path: { id: sessionId },
+      body: {
+        parts: [{ type: 'text', text: prompt }]
+      }
+    });
+
+    const textPart = (result.data as any).parts?.find((p: any) => p.type === 'text');
+    const text = textPart?.text?.trim();
+    
+    if (!text) throw new Error("No response from OpenCode");
+
+    // Try to find JSON in the response if there's markdown around it
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const jsonStr = jsonMatch ? jsonMatch[0] : text;
+    
+    return JSON.parse(jsonStr) as PlanResult;
+
+  } catch (e) {
+    console.error("Error creating plan:", e);
+    throw e;
   }
 };

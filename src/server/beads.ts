@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { spawn } from 'child_process'
 
-import { generateTitle } from './opencode'
+import { generateTitle, createPlanAction } from './opencode'
 
 // Define the schema based on bd list --json output
 export const BeadSchema = z.object({
@@ -79,6 +79,47 @@ async function runBd(args: string[], cwd: string): Promise<any> {
   })
 }
 
+export const createPlan = createServerFn({ method: 'POST' })
+  .inputValidator((data: {
+    projectPath: string
+    id: string
+    title: string
+    description?: string
+    issue_type?: string
+  }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const planResult = await createPlanAction(
+        data.title,
+        data.description || '',
+        data.issue_type || 'task',
+        data.projectPath
+      )
+
+      // 1. Add plan as comment
+      await runBd(['comments', 'add', data.id, planResult.plan], data.projectPath)
+
+      // 2. Create subtasks and add as dependencies
+      for (const subtask of planResult.subtasks) {
+        const args = ['create', subtask.title]
+        if (subtask.description) args.push('--description', subtask.description)
+        if (subtask.type) args.push('--type', subtask.type)
+        
+        const output = await runBd(args, data.projectPath)
+        const match = output.match(/Created issue: ([\w-]+)/)
+        if (match) {
+          const subtaskId = match[1]
+          await runBd(['dep', 'add', data.id, subtaskId], data.projectPath)
+        }
+      }
+
+      return true
+    } catch (e) {
+      console.error('Failed to create plan', e)
+      throw e
+    }
+  })
+
 export const getBeads = createServerFn({ method: 'GET' })
   .inputValidator((projectPath: string) => projectPath)
   .handler(async ({ data: projectPath }) => {
@@ -138,7 +179,7 @@ export const createBead = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     let title = data.title;
     if (!title && data.description) {
-      title = await generateTitle(data.description);
+      title = await generateTitle(data.description, data.projectPath);
     }
 
     if (!title) {

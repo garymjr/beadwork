@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Loader2, Trash2, MessageSquare, Link as LinkIcon, Plus, X } from 'lucide-react'
+import { Loader2, Trash2, MessageSquare, Link as LinkIcon, Plus, X, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { 
   updateBead, 
@@ -19,6 +19,7 @@ import {
   getDependencies, 
   addDependency, 
   removeDependency,
+  createPlan,
   type Bead,
   type Comment,
   type Dependency
@@ -82,6 +83,29 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
       })
       router.invalidate()
       onClose()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreatePlan = async () => {
+    if (!bead) return
+    setLoading(true)
+    try {
+      await createPlan({
+        data: {
+          projectPath,
+          id: bead.id,
+          title: formData.title || bead.title,
+          description: formData.description || bead.description,
+          issue_type: bead.issue_type
+        }
+      })
+      await fetchComments()
+      await fetchDependencies()
+      router.invalidate()
     } catch (e) {
       console.error(e)
     } finally {
@@ -324,6 +348,15 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
         </Tabs>
 
         <SheetFooter className="mt-4 pt-4 border-t shrink-0">
+          <Button 
+            variant="secondary" 
+            onClick={handleCreatePlan} 
+            disabled={loading || !formData.description}
+            className="mr-auto"
+          >
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            Create Plan
+          </Button>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
