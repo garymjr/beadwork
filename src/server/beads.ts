@@ -127,7 +127,7 @@ export const updateBead = createServerFn({ method: 'POST' })
 export const deleteBead = createServerFn({ method: 'POST' })
   .inputValidator((data: { projectPath: string, id: string }) => data)
   .handler(async ({ data }) => {
-    await runBd(['delete', data.id], data.projectPath)
+    await runBd(['delete', data.id, '--force'], data.projectPath)
     return true
   })
   
