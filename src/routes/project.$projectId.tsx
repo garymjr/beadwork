@@ -3,6 +3,7 @@ import { getProject } from '@/server/projects'
 import { getBeads, createBead, getBead, type Bead } from '@/server/beads'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,8 @@ function ProjectComponent() {
   const router = useRouter()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [newIssueTitle, setNewIssueTitle] = useState('')
+  const [newIssueDescription, setNewIssueDescription] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
   const [selectedBead, setSelectedBead] = useState<Bead | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board')
@@ -59,11 +62,25 @@ function ProjectComponent() {
   }, [beads, searchQuery])
 
   const handleCreate = async () => {
-    if (!newIssueTitle.trim()) return
-    await createBead({ data: { projectPath: project.path, title: newIssueTitle } })
-    setNewIssueTitle('')
-    setIsCreateOpen(false)
-    router.invalidate()
+    if (!newIssueTitle.trim() && !newIssueDescription.trim()) return
+    setIsCreating(true)
+    try {
+      await createBead({ 
+        data: { 
+          projectPath: project.path, 
+          title: newIssueTitle || undefined, 
+          description: newIssueDescription || undefined 
+        } 
+      })
+      setNewIssueTitle('')
+      setNewIssueDescription('')
+      setIsCreateOpen(false)
+      router.invalidate()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   const handleBeadClick = async (bead: Bead) => {
@@ -114,7 +131,7 @@ function ProjectComponent() {
                 New Issue
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>Create New Issue</DialogTitle>
                 <VisuallyHidden>
@@ -125,18 +142,27 @@ function ProjectComponent() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <label htmlFor="title">Title</label>
+                  <label htmlFor="title" className="text-sm font-medium">Title (optional if description provided)</label>
                   <Input
                     id="title"
                     value={newIssueTitle}
                     onChange={(e) => setNewIssueTitle(e.target.value)}
                     placeholder="Issue title..."
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCreate()
-                    }}
                   />
                 </div>
-                <Button onClick={handleCreate}>Create</Button>
+                <div className="grid gap-2">
+                  <label htmlFor="description" className="text-sm font-medium">Description</label>
+                  <Textarea
+                    id="description"
+                    value={newIssueDescription}
+                    onChange={(e) => setNewIssueDescription(e.target.value)}
+                    placeholder="Describe the issue... (AI will generate title if left blank)"
+                    className="min-h-[100px]"
+                  />
+                </div>
+                <Button onClick={handleCreate} disabled={isCreating || (!newIssueTitle.trim() && !newIssueDescription.trim())}>
+                  {isCreating ? 'Creating...' : 'Create'}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>

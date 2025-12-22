@@ -2,6 +2,8 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { spawn } from 'child_process'
 
+import { generateTitle } from './opencode'
+
 // Define the schema based on bd list --json output
 export const BeadSchema = z.object({
   id: z.string(),
@@ -64,15 +66,15 @@ async function runBd(args: string[], cwd: string): Promise<any> {
             resolve(stdout)
           }
         } catch (e) {
-            // Fallback for non-json output or parsing error
-            console.error("Parse error", e)
-            resolve(stdout)
+          // Fallback for non-json output or parsing error
+          console.error("Parse error", e)
+          resolve(stdout)
         }
       }
     })
-    
+
     proc.on('error', (err) => {
-        reject(err)
+      reject(err)
     })
   })
 }
@@ -92,29 +94,29 @@ export const getBeads = createServerFn({ method: 'GET' })
 export const getBead = createServerFn({ method: 'GET' })
   .inputValidator((data: { projectPath: string, id: string }) => data)
   .handler(async ({ data }) => {
-     try {
-       // bd show returns details. It might not support --json fully for all details in older versions, 
-       // but based on help it does.
-       const result = await runBd(['show', data.id, '--json'], data.projectPath)
-       return Array.isArray(result) ? result[0] : result
-     } catch (e) {
-       console.error('Failed to get bead', e)
-       return null
-     }
+    try {
+      // bd show returns details. It might not support --json fully for all details in older versions, 
+      // but based on help it does.
+      const result = await runBd(['show', data.id, '--json'], data.projectPath)
+      return Array.isArray(result) ? result[0] : result
+    } catch (e) {
+      console.error('Failed to get bead', e)
+      return null
+    }
   })
 
 export const updateBead = createServerFn({ method: 'POST' })
-  .inputValidator((data: { 
+  .inputValidator((data: {
     projectPath: string
     id: string
     title?: string
     description?: string
-    status?: string 
+    status?: string
     priority?: string
   }) => data)
   .handler(async ({ data }) => {
     const args = ['update', data.id]
-    
+
     if (data.title) args.push('--title', data.title)
     if (data.description) args.push('--description', data.description)
     if (data.status) args.push('--status', data.status)
@@ -130,16 +132,29 @@ export const deleteBead = createServerFn({ method: 'POST' })
     await runBd(['delete', data.id, '--force'], data.projectPath)
     return true
   })
-  
+
 export const createBead = createServerFn({ method: 'POST' })
-  .inputValidator((data: { projectPath: string, title: string, type?: string }) => data)
+  .inputValidator((data: { projectPath: string, title?: string, description?: string, type?: string }) => data)
   .handler(async ({ data }) => {
-      // Create via CLI: bd create "Title"
-      // If type is needed, we might need flags or parsing.
-      // bd create "Title" creates one issue.
-      // We return the output or re-fetch.
-      await runBd(['create', data.title], data.projectPath)
-      return true
+    let title = data.title;
+    if (!title && data.description) {
+      title = await generateTitle(data.description);
+    }
+
+    if (!title) {
+      throw new Error("Title is required or must be generated from description");
+    }
+
+    const args = ['create', title];
+    if (data.description) {
+      args.push('--description', data.description);
+    }
+    if (data.type) {
+      args.push('--type', data.type);
+    }
+
+    await runBd(args, data.projectPath)
+    return true
   })
 
 export const getComments = createServerFn({ method: 'GET' })
@@ -177,11 +192,11 @@ export const getDependencies = createServerFn({ method: 'GET' })
   })
 
 export const addDependency = createServerFn({ method: 'POST' })
-  .inputValidator((data: { 
-    projectPath: string, 
-    id: string, 
-    dependsOnId: string, 
-    type?: string 
+  .inputValidator((data: {
+    projectPath: string,
+    id: string,
+    dependsOnId: string,
+    type?: string
   }) => data)
   .handler(async ({ data }) => {
     const args = ['dep', 'add', data.id, data.dependsOnId]
