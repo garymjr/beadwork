@@ -150,7 +150,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-[800px] flex flex-col h-full">
+      <SheetContent hideClose className="w-full sm:max-w-[800px] flex flex-col h-full">
         <VisuallyHidden>
           <SheetTitle>Issue Details: {bead.id}</SheetTitle>
           <SheetDescription>View and edit details for issue {bead.id}</SheetDescription>
