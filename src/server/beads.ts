@@ -22,8 +22,9 @@ export type Bead = z.infer<typeof BeadSchema>
 
 export const CommentSchema = z.object({
   id: z.string(),
+  issue_id: z.string(),
   author: z.string(),
-  content: z.string(),
+  text: z.string(),
   created_at: z.string(),
 })
 

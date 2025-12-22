@@ -278,7 +278,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
                             </span>
                           </div>
                           <div className="text-sm bg-white border rounded-md p-2 shadow-sm whitespace-pre-wrap">
-                            {comment.content}
+                            {comment.text}
                           </div>
                         </div>
                       </div>
