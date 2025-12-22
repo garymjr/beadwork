@@ -1,11 +1,16 @@
-import { type Bead } from '@/server/beads'
+import { type Bead, type TransientBead } from '@/server/beads'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Loader2, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+type BeadOrTransient = Bead | (TransientBead & { id: string })
 
 interface KanbanBoardProps {
-  beads: Bead[]
-  onBeadClick: (bead: Bead) => void
+  beads: BeadOrTransient[]
+  onBeadClick: (bead: BeadOrTransient) => void
+  onRetryGeneration?: (transientId: string) => void
 }
 
 const getPriorityColor = (priority: number | undefined, status: string) => {
@@ -64,7 +69,7 @@ const COLUMNS = [
   },
 ]
 
-export function KanbanBoard({ beads, onBeadClick }: KanbanBoardProps) {
+export function KanbanBoard({ beads, onBeadClick, onRetryGeneration }: KanbanBoardProps) {
   const getColumnBeads = (status: string) => {
     // Map various closed statuses to 'done' or keep specific
     if (status === 'done') return beads.filter(b => b.status === 'done' || b.status === 'closed')
@@ -83,28 +88,74 @@ export function KanbanBoard({ beads, onBeadClick }: KanbanBoardProps) {
           </div>
           <ScrollArea className="flex-1 p-2">
             <div className="space-y-2">
-              {getColumnBeads(col.id).map(bead => (
-                <Card 
-                  key={bead.id} 
-                  className={`cursor-pointer transition-all duration-300 hover:scale-102 hover:shadow-lg ${col.cardBorder} backdrop-blur-sm border border-white/20 bg-white/80 hover:bg-white/90`}
-                  onClick={() => onBeadClick(bead)}
-                >
-                  <CardHeader className="p-3 pb-0 space-y-1">
-                    <div className="flex justify-between items-start">
-                      <span className="font-mono text-xs text-muted-foreground font-bold">{bead.id}</span>
-                      <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, col.id)}`}>
-                        P{bead.priority}
-                      </Badge>
-                    </div>
-                    <CardTitle className="text-sm font-semibold leading-tight text-gray-800">
-                      {bead.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 pt-2 text-xs text-gray-600 line-clamp-2">
-                    {bead.description || "No description"}
-                  </CardContent>
-                </Card>
-              ))}
+              {getColumnBeads(col.id).map(bead => {
+                const isTransient = 'transientId' in bead
+                const transientBead = isTransient ? bead as any : null
+                const isGenerating = transientBead?.transientStatus === 'generating'
+                const hasError = transientBead?.transientStatus === 'error'
+                const isCompleted = transientBead?.transientStatus === 'completed'
+                
+                return (
+                  <Card 
+                    key={bead.id} 
+                    className={`cursor-pointer transition-all duration-300 hover:scale-102 hover:shadow-lg ${col.cardBorder} backdrop-blur-sm border border-white/20 ${
+                      isGenerating ? 'bg-white/60 border-dashed opacity-70' : 'bg-white/80 hover:bg-white/90'
+                    } ${hasError ? 'bg-red-50 border-red-200' : ''} ${
+                      isCompleted ? 'bg-white/90 border-green-200' : ''
+                    }`}
+                    onClick={() => onBeadClick(bead)}
+                  >
+                    <CardHeader className="p-3 pb-0 space-y-1">
+                      <div className="flex justify-between items-start">
+                        <span className="font-mono text-xs text-muted-foreground font-bold">{bead.id}</span>
+                        <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, col.id)}`}>
+                          P{bead.priority}
+                        </Badge>
+                      </div>
+                      {isGenerating && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Generating title...
+                        </div>
+                      )}
+                      {isCompleted && (
+                        <div className="flex items-center gap-2 text-xs text-green-600">
+                          ✓ Title generated
+                        </div>
+                      )}
+                      {hasError && (
+                        <div className="space-y-2">
+                          <div className="text-xs text-red-600">
+                            Error: {transientBead?.error}
+                          </div>
+                          {onRetryGeneration && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onRetryGeneration(transientBead!.transientId)
+                              }}
+                              className="text-xs h-6 px-2"
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Retry
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                      <CardTitle className={`text-sm font-semibold leading-tight ${
+                        isGenerating ? 'text-gray-500 italic' : 'text-gray-800'
+                      }`}>
+                        {bead.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-3 pt-2 text-xs text-gray-600 line-clamp-2">
+                      {bead.description || "No description"}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           </ScrollArea>
         </div>

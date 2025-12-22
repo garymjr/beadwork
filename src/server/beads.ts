@@ -20,6 +20,21 @@ export const BeadSchema = z.object({
 
 export type Bead = z.infer<typeof BeadSchema>
 
+export const TransientBeadSchema = z.object({
+  transientId: z.string(),
+  description: z.string().optional(),
+  status: z.enum(['generating', 'error', 'completed']),
+  title: z.string().optional(),
+  error: z.string().optional(),
+  retryCount: z.number().optional(),
+  priority: z.number().optional(),
+  issue_type: z.string().optional(),
+  created_at: z.string().optional(), // Client-side timestamp
+  realId: z.string().optional(), // The actual bead ID after creation
+})
+
+export type TransientBead = z.infer<typeof TransientBeadSchema>
+
 export const CommentSchema = z.object({
   id: z.string(),
   issue_id: z.string(),
@@ -168,6 +183,23 @@ export const updateBead = createServerFn({ method: 'POST' })
     return true
   })
 
+export const updateBeadTitle = createServerFn({ method: 'POST' })
+  .inputValidator((data: {
+    projectPath: string
+    id: string
+    title: string
+  }) => data)
+  .handler(async ({ data }) => {
+    const args = ['update', data.id, '--title', data.title]
+
+    try {
+      await runBd(args, data.projectPath)
+      return { success: true, title: data.title }
+    } catch (error) {
+      throw new Error(`Failed to update title: ${error}`)
+    }
+  })
+
 export const deleteBead = createServerFn({ method: 'POST' })
   .inputValidator((data: { projectPath: string, id: string }) => data)
   .handler(async ({ data }) => {
@@ -197,6 +229,56 @@ export const createBead = createServerFn({ method: 'POST' })
 
     await runBd(args, data.projectPath)
     return true
+  })
+
+export const createBeadAsync = createServerFn({ method: 'POST' })
+  .inputValidator((data: { 
+    projectPath: string, 
+    description?: string, 
+    type?: string,
+    priority?: number,
+    transientId?: string
+  }) => data)
+  .handler(async ({ data }) => {
+    // This function creates the bead immediately with a placeholder title
+    // and returns the bead data. The title generation happens separately.
+    const placeholderTitle = data.description?.substring(0, 50) + '...' || 'Untitled Issue'
+    
+    const args = ['create', placeholderTitle];
+    if (data.description) {
+      args.push('--description', data.description);
+    }
+    if (data.type) {
+      args.push('--type', data.type);
+    }
+    if (data.priority !== undefined) {
+      args.push('--priority', data.priority.toString());
+    }
+
+    try {
+      const output = await runBd(args, data.projectPath)
+      
+      // Extract the bead ID from the output
+      const match = output?.match(/Created issue: ([\w-]+)/)
+      const beadId = match?.[1]
+      
+      if (!beadId) {
+        throw new Error('Failed to create bead: No ID returned')
+      }
+
+      // Return the created bead data
+      return {
+        id: beadId,
+        title: placeholderTitle,
+        description: data.description,
+        status: 'open',
+        priority: data.priority || 2,
+        issue_type: data.type || 'task',
+        transientId: data.transientId
+      }
+    } catch (error) {
+      throw new Error(`Failed to create bead: ${error}`)
+    }
   })
 
 export const getComments = createServerFn({ method: 'GET' })
@@ -252,6 +334,18 @@ export const removeDependency = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     await runBd(['dep', 'remove', data.id, data.dependsOnId], data.projectPath)
     return true
+  })
+
+export const generateTitleServer = createServerFn({ method: 'POST' })
+  .inputValidator((data: { description: string, projectPath?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const title = await generateTitle(data.description, data.projectPath)
+      return { title }
+    } catch (e) {
+      console.error('Failed to generate title', e)
+      throw e
+    }
   })
 
 export const getProjectStats = createServerFn({ method: 'GET' })

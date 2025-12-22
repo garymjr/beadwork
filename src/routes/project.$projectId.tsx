@@ -1,6 +1,8 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { getProject } from '@/server/projects'
-import { getBeads, createBead, getBead, type Bead } from '@/server/beads'
+import { getBeads, createBead, getBead, createBeadAsync, updateBeadTitle, generateTitleServer, type Bead, type TransientBead } from '@/server/beads'
+
+type BeadOrTransient = Bead | (TransientBead & { id: string })
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -50,32 +52,194 @@ function ProjectComponent() {
   const [selectedBead, setSelectedBead] = useState<Bead | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board')
+  const [transientBeads, setTransientBeads] = useState<TransientBead[]>([])
+
+  const allBeads = useMemo(() => {
+    const allTransient = transientBeads.map(b => ({
+      id: b.transientId,
+      title: b.title || 'Generating title...',
+      description: b.description,
+      status: 'open', // All transient beads show in open column
+      priority: b.priority || 2,
+      issue_type: b.issue_type || 'task',
+      created_at: b.created_at,
+      transientId: b.transientId,
+      transientStatus: b.status,
+      error: b.error,
+      retryCount: b.retryCount
+    }))
+    
+    return [...allTransient, ...beads]
+  }, [beads, transientBeads])
 
   const filteredBeads = useMemo(() => {
-    if (!searchQuery.trim()) return beads
+    if (!searchQuery.trim()) return allBeads
     const q = searchQuery.toLowerCase()
-    return beads.filter(b => 
+    return allBeads.filter(b => 
       b.id.toLowerCase().includes(q) || 
       b.title.toLowerCase().includes(q) ||
       b.description?.toLowerCase().includes(q)
     )
-  }, [beads, searchQuery])
+  }, [allBeads, searchQuery])
+
+  const retryTitleGeneration = async (transientId: string) => {
+    const transientBead = transientBeads.find(b => b.transientId === transientId)
+    if (!transientBead) return
+    
+    // Update status to generating
+    setTransientBeads(prev => prev.map(b => 
+      b.transientId === transientId 
+        ? { ...b, status: 'generating', error: undefined, retryCount: (b.retryCount || 0) + 1 }
+        : b
+    ))
+    
+    try {
+      const { title } = await generateTitleServer({ 
+        data: { description: transientBead.description!, projectPath: project.path } 
+      })
+      
+      // Get the real bead ID from the transient bead metadata
+      const realId = (transientBead as any).realId
+      
+      // Update the real bead with the generated title
+      if (realId) {
+        await updateBeadTitle({ 
+          data: { 
+            projectPath: project.path, 
+            id: realId, 
+            title 
+          } 
+        })
+        
+        // Remove the transient bead since real bead is now updated
+        setTransientBeads(prev => prev.filter(b => b.transientId !== transientId))
+        setTimeout(() => router.invalidate(), 500)
+      } else {
+        // If no real ID, update to error state
+        setTransientBeads(prev => prev.map(b => 
+          b.transientId === transientId 
+            ? { ...b, status: 'error', error: 'No real bead ID found' }
+            : b
+        ))
+      }
+    } catch (error) {
+      setTransientBeads(prev => prev.map(b => 
+        b.transientId === transientId 
+          ? { ...b, status: 'error', error: (error as Error).message }
+          : b
+      ))
+    }
+  }
+
+  const createTransientBead = async (description: string, type?: string, priority?: number) => {
+    const transientId = crypto.randomUUID()
+    const transientBead: TransientBead = {
+      transientId,
+      description,
+      status: 'generating',
+      title: 'Generating title...',
+      issue_type: type || 'task',
+      priority: priority || 2,
+      created_at: new Date().toISOString(),
+    }
+    
+    setTransientBeads(prev => [...prev, transientBead])
+    
+    try {
+      // Create the bead immediately with placeholder title
+      const createdBead = await createBeadAsync({ 
+        data: { 
+          projectPath: project.path, 
+          description,
+          type: type || 'task',
+          priority: priority || 2,
+          transientId
+        } 
+      })
+      
+      // Store the real ID in the transient bead
+      setTransientBeads(prev => prev.map(b => 
+        b.transientId === transientId 
+          ? { ...b, realId: createdBead.id }
+          : b
+      ))
+      
+      // Generate title in background
+      try {
+        const { title } = await generateTitleServer({ 
+          data: { description, projectPath: project.path } 
+        })
+        
+        // Update the real bead with the generated title
+        await updateBeadTitle({ 
+          data: { 
+            projectPath: project.path, 
+            id: createdBead.id, 
+            title 
+          } 
+        })
+        
+        // Update transient to show the generated title (looks like real bead now)
+        setTransientBeads(prev => prev.map(b => 
+          b.transientId === transientId 
+            ? { ...b, title, status: 'completed' }
+            : b
+        ))
+        
+        // Invalidate to refresh the real bead data, then remove transient after a short delay
+        setTimeout(() => {
+          router.invalidate()
+          // Remove transient after real bead data has loaded
+          setTimeout(() => {
+            setTransientBeads(prev => prev.filter(b => b.transientId !== transientId))
+          }, 100)
+        }, 500)
+        
+        return { transientId, realId: createdBead.id, title }
+      } catch (error) {
+        setTransientBeads(prev => prev.map(b => 
+          b.transientId === transientId 
+            ? { ...b, status: 'error', error: (error as Error).message }
+            : b
+        ))
+        throw error
+      }
+    } catch (error) {
+      setTransientBeads(prev => prev.map(b => 
+        b.transientId === transientId 
+          ? { ...b, status: 'error', error: (error as Error).message }
+          : b
+      ))
+      throw error
+    }
+  }
 
   const handleCreate = async () => {
     if (!newIssueTitle.trim() && !newIssueDescription.trim()) return
     setIsCreating(true)
     try {
-      await createBead({ 
-        data: { 
-          projectPath: project.path, 
-          title: newIssueTitle || undefined, 
-          description: newIssueDescription || undefined 
-        } 
-      })
+      if (newIssueTitle.trim()) {
+        // If title is provided, create normally
+        await createBead({ 
+          data: { 
+            projectPath: project.path, 
+            title: newIssueTitle, 
+            description: newIssueDescription || undefined 
+          } 
+        })
+      } else if (newIssueDescription.trim()) {
+        // If only description is provided, create transient bead
+        await createTransientBead(newIssueDescription)
+      }
+      
       setNewIssueTitle('')
       setNewIssueDescription('')
       setIsCreateOpen(false)
-      router.invalidate()
+      
+      // Only invalidate if we created a regular bead
+      if (newIssueTitle.trim()) {
+        router.invalidate()
+      }
     } catch (e) {
       console.error(e)
     } finally {
@@ -83,8 +247,13 @@ function ProjectComponent() {
     }
   }
 
-  const handleBeadClick = async (bead: Bead) => {
-    // Fetch full details if needed (though list returns mostly everything)
+  const handleBeadClick = async (bead: BeadOrTransient) => {
+    // Only fetch full details for real beads, not transient ones
+    if ('transientId' in bead) {
+      // For transient beads, we could show a different view or skip
+      return
+    }
+    
     const fullBead = await getBead({ data: { projectPath: project.path, id: bead.id } })
     setSelectedBead(fullBead || bead)
   }
@@ -171,7 +340,7 @@ function ProjectComponent() {
 
       <div className="flex-1 overflow-hidden">
         {viewMode === 'board' ? (
-          <KanbanBoard beads={filteredBeads} onBeadClick={handleBeadClick} />
+          <KanbanBoard beads={filteredBeads} onBeadClick={handleBeadClick} onRetryGeneration={retryTitleGeneration} />
         ) : (
           <div className="border rounded-lg bg-white overflow-hidden flex flex-col h-full">
             <Table>

@@ -2,18 +2,38 @@ import { createOpencode } from '@opencode-ai/sdk';
 
 // Singleton instance to prevent spawning multiple servers
 let opencodeInstance: Awaited<ReturnType<typeof createOpencode>> | null = null;
+let isInitializing = false;
+let initPromise: Promise<Awaited<ReturnType<typeof createOpencode>>> | null = null;
 
 export const getOpencode = async () => {
-  if (!opencodeInstance) {
-    // createOpencode() starts the server and returns the client
-    opencodeInstance = await createOpencode({
-      config: {
-        model: 'opencode/big-pickle',
-      },
-    });
-    console.log('OpenCode server started with opencode/big-pickle and client initialized.');
+  if (opencodeInstance) {
+    return opencodeInstance.client;
   }
-  return opencodeInstance.client;
+  
+  if (isInitializing && initPromise) {
+    // Another request is initializing, wait for it
+    opencodeInstance = await initPromise;
+    return opencodeInstance.client;
+  }
+  
+  isInitializing = true;
+  initPromise = createOpencode({
+    config: {
+      model: 'opencode/big-pickle',
+    },
+  });
+  
+  try {
+    opencodeInstance = await initPromise;
+    console.log('OpenCode server started with opencode/big-pickle and client initialized.');
+    return opencodeInstance.client;
+  } catch (error) {
+    console.error('Failed to create OpenCode instance:', error);
+    throw new Error(`OpenCode initialization failed: ${error}`);
+  } finally {
+    isInitializing = false;
+    initPromise = null;
+  }
 };
 
 export const generateTitle = async (description: string, projectPath?: string): Promise<string> => {
