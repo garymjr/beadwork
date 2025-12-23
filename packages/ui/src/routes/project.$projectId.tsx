@@ -1,6 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { getProject } from '@/server/projects'
-import { getBeads, createBead, getBead, createBeadAsync, updateBeadTitle, generateTitleServer, type Bead, type TransientBead } from '@/server/beads'
+import { getProject, getBeads, createBead, getBead, createBeadAsync, updateBeadTitle, generateTitle, type Bead, type TransientBead } from '@/lib/api'
 
 type BeadOrTransient = Bead | (TransientBead & { id: string })
 import { Button } from '@/components/ui/button'
@@ -32,11 +31,11 @@ import { Badge } from '@/components/ui/badge'
 
 export const Route = createFileRoute('/project/$projectId')({
   loader: async ({ params }) => {
-    const project = await getProject({ data: params.projectId })
+    const project = await getProject(params.projectId)
     if (!project) {
       throw notFound()
     }
-    const beads = await getBeads({ data: project.path })
+    const beads = await getBeads(project.path)
     return { project, beads }
   },
   component: ProjectComponent,
@@ -94,22 +93,21 @@ function ProjectComponent() {
     ))
     
     try {
-      const { title } = await generateTitleServer({ 
-        data: { description: transientBead.description!, projectPath: project.path } 
-      })
+      const title = await generateTitle(
+        transientBead.description!,
+        project.path
+      )
       
       // Get the real bead ID from the transient bead metadata
       const realId = (transientBead as any).realId
       
       // Update the real bead with the generated title
       if (realId) {
-        await updateBeadTitle({ 
-          data: { 
-            projectPath: project.path, 
-            id: realId, 
-            title 
-          } 
-        })
+        await updateBeadTitle(
+          project.path,
+          realId,
+          title
+        )
         
         // Remove the transient bead since real bead is now updated
         setTransientBeads(prev => prev.filter(b => b.transientId !== transientId))
@@ -148,13 +146,11 @@ function ProjectComponent() {
     try {
       // Create the bead immediately with placeholder title
       const createdBead = await createBeadAsync({ 
-        data: { 
-          projectPath: project.path, 
-          description,
-          type: type || 'task',
-          priority: priority || 2,
-          transientId
-        } 
+        projectPath: project.path, 
+        description,
+        type: type || 'task',
+        priority: priority || 2,
+        transientId
       })
       
       // Store the real ID in the transient bead
@@ -166,18 +162,17 @@ function ProjectComponent() {
       
       // Generate title in background
       try {
-        const { title } = await generateTitleServer({ 
-          data: { description, projectPath: project.path } 
-        })
+        const title = await generateTitle(
+          description,
+          project.path
+        )
         
         // Update the real bead with the generated title
-        await updateBeadTitle({ 
-          data: { 
-            projectPath: project.path, 
-            id: createdBead.id, 
-            title 
-          } 
-        })
+        await updateBeadTitle(
+          project.path,
+          createdBead.id,
+          title
+        )
         
         // Update transient to show the generated title (looks like real bead now)
         setTransientBeads(prev => prev.map(b => 
@@ -233,11 +228,9 @@ function ProjectComponent() {
       if (newIssueTitle.trim()) {
         // If title is provided, create normally
         await createBead({ 
-          data: { 
-            projectPath: project.path, 
-            title: newIssueTitle, 
-            description: newIssueDescription || undefined 
-          } 
+          projectPath: project.path, 
+          title: newIssueTitle, 
+          description: newIssueDescription || undefined 
         })
         // Close dialog after successful regular bead creation
         setIsCreateOpen(false)
@@ -265,7 +258,7 @@ function ProjectComponent() {
       return
     }
     
-    const fullBead = await getBead({ data: { projectPath: project.path, id: bead.id } })
+    const fullBead = await getBead(bead.id, project.path)
     setSelectedBead(fullBead || bead)
   }
 

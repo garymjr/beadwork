@@ -1,4 +1,4 @@
-import { type Bead, type TransientBead } from '@/server/beads'
+import { type Bead, type TransientBead } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'

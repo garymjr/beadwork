@@ -2,7 +2,7 @@ import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { HeadContent, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import appCss from '../styles.css?url'
-import { getProjects } from '@/server/projects'
+import { getProjects } from '@/lib/api'
 import { ProjectSidebar } from '@/components/project-sidebar'
 
 export const Route = createRootRoute({

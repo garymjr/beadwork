@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { getProjects, addProject, type Project } from '@/server/projects'
-import { getProjectStats } from '@/server/beads'
+import { getProjects, addProject, getProjectStats, type Project } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Folder, Plus, ArrowRight, FolderOpen } from 'lucide-react'
@@ -28,7 +27,7 @@ function Dashboard() {
 
   const handleAdd = async () => {
     try {
-      await addProject({ data: { path: newPath } })
+      await addProject(newPath)
       setIsAddOpen(false)
       setNewPath('')
       setError('')
@@ -37,7 +36,7 @@ function Dashboard() {
       if (e.message.includes('PROJECT_NEEDS_INIT')) {
         if (confirm('Project needs initialization. Initialize beads?')) {
           try {
-            await addProject({ data: { path: newPath, init: true } })
+            await addProject(newPath, true)
             setIsAddOpen(false)
             setNewPath('')
             setError('')
@@ -134,7 +133,7 @@ function ProjectCard({ project }: { project: Project }) {
   const [stats, setStats] = useState<any>(null)
 
   useEffect(() => {
-    getProjectStats({ data: project.path }).then(setStats)
+    getProjectStats(project.path).then(setStats)
   }, [project.path])
 
   return (

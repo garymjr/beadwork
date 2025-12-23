@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getDirectoryListing, type DirectoryListing } from '@/server/filesystem'
+import { getDirectoryListing, type DirectoryListing } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Folder, ArrowLeft, ChevronRight, Loader2 } from 'lucide-react'
@@ -19,7 +19,7 @@ export function DirectoryPicker({ onSelect, onCancel }: DirectoryPickerProps) {
     setLoading(true)
     setError('')
     try {
-      const result = await getDirectoryListing({ data: path })
+      const result = await getDirectoryListing(path)
       setData(result)
       setCurrentPath(result.currentPath)
     } catch (e) {

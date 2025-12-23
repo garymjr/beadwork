@@ -23,7 +23,7 @@ import {
   type Bead,
   type Comment,
   type Dependency
-} from '@/server/beads'
+} from '@/lib/api'
 import { useRouter } from '@tanstack/react-router'
 
 interface IssueSheetProps {
@@ -58,13 +58,13 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
 
   const fetchComments = async () => {
     if (!bead) return
-    const res = await getComments({ data: { projectPath, id: bead.id } })
+    const res = await getComments(projectPath, bead.id)
     setComments(res)
   }
 
   const fetchDependencies = async () => {
     if (!bead) return
-    const res = await getDependencies({ data: { projectPath, id: bead.id } })
+    const res = await getDependencies(projectPath, bead.id)
     setDependencies(res)
   }
 
@@ -73,14 +73,12 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
     setLoading(true)
     try {
       await updateBead({
-        data: {
-          projectPath,
-          id: bead.id,
-          title: formData.title,
-          description: formData.description,
-          status: formData.status,
-          priority: String(formData.priority)
-        }
+        projectPath,
+        id: bead.id,
+        title: formData.title,
+        description: formData.description,
+        status: formData.status,
+        priority: String(formData.priority)
       })
       router.invalidate()
       onClose()
@@ -96,13 +94,11 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
     setLoading(true)
     try {
       await createPlan({
-        data: {
-          projectPath,
-          id: bead.id,
-          title: formData.title || bead.title,
-          description: formData.description || bead.description,
-          issue_type: bead.issue_type
-        }
+        projectPath,
+        id: bead.id,
+        title: formData.title || bead.title,
+        description: formData.description || bead.description,
+        issue_type: bead.issue_type
       })
       await fetchComments()
       await fetchDependencies()
@@ -118,7 +114,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
     if (!bead || !confirm('Are you sure you want to delete this issue?')) return
     setLoading(true)
     try {
-      await deleteBead({ data: { projectPath, id: bead.id } })
+      await deleteBead(projectPath, bead.id)
       router.invalidate()
       onClose()
     } catch (e) {
@@ -132,7 +128,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
     if (!bead || !newComment.trim()) return
     setLoading(true)
     try {
-      await addComment({ data: { projectPath, id: bead.id, content: newComment } })
+      await addComment(projectPath, bead.id, newComment)
       setNewComment('')
       await fetchComments()
     } catch (e) {
@@ -146,7 +142,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
     if (!bead || !newDepId.trim()) return
     setLoading(true)
     try {
-      await addDependency({ data: { projectPath, id: bead.id, dependsOnId: newDepId } })
+      await addDependency(projectPath, bead.id, newDepId)
       setNewDepId('')
       await fetchDependencies()
       router.invalidate()
@@ -161,7 +157,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
     if (!bead) return
     setLoading(true)
     try {
-      await removeDependency({ data: { projectPath, id: bead.id, dependsOnId: depId } })
+      await removeDependency(projectPath, bead.id, depId)
       await fetchDependencies()
       router.invalidate()
     } catch (e) {

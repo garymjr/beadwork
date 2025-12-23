@@ -12,8 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus, Folder, Search, Trash2, Sun, Moon } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { addProject, removeProject, type Project } from '@/server/projects'
-import { getProjectStats } from '@/server/beads'
+import { addProject, removeProject, getProjectStats, type Project } from '@/lib/api'
 import { useRouter } from '@tanstack/react-router'
 import { DirectoryPicker } from './directory-picker'
 import { Badge } from '@/components/ui/badge'
@@ -44,7 +43,7 @@ export function ProjectSidebar({ projects }: { projects: Project[] }) {
 
   const handleAdd = async () => {
     try {
-      await addProject({ data: { path } })
+      await addProject(path)
       setIsOpen(false)
       setPath('')
       setError('')
@@ -53,7 +52,7 @@ export function ProjectSidebar({ projects }: { projects: Project[] }) {
       if (e.message.includes('PROJECT_NEEDS_INIT')) {
         if (confirm('Project needs initialization. Initialize beads?')) {
           try {
-            await addProject({ data: { path, init: true } })
+            await addProject(path, true)
             setIsOpen(false)
             setPath('')
             setError('')
@@ -73,7 +72,7 @@ export function ProjectSidebar({ projects }: { projects: Project[] }) {
     e.preventDefault()
     e.stopPropagation()
     if (!confirm('Remove this project from BeadWork?')) return
-    await removeProject({ data: id })
+    await removeProject(id)
     router.invalidate()
   }
 
@@ -168,7 +167,7 @@ function ProjectItem({
   const [stats, setStats] = useState<any>(null)
 
   useEffect(() => {
-    getProjectStats({ data: project.path }).then(setStats)
+    getProjectStats(project.path).then(setStats)
   }, [project.path])
 
   return (
