@@ -153,7 +153,7 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
   const typeConfig = TYPE_CONFIGS[bead.issue_type] || TYPE_CONFIGS.task
 
   const getStateClasses = () => {
-    const baseClasses = 'cursor-pointer card-state-transition rounded-xl hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/15 backdrop-blur-sm transition-all duration-300'
+    const baseClasses = 'cursor-pointer card-state-transition rounded-xl hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/20 backdrop-blur-sm transition-all duration-300 overflow-hidden relative'
     return `${baseClasses} ${config.bgClass} ${config.borderClass} ${config.animationClass} ${columnCardBorder}`
   }
 
@@ -162,53 +162,59 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
   const isCompletedState = state === 'completed'
 
   return (
-    <Card 
+    <Card
       className={getStateClasses()}
       onClick={onClick}
       data-priority={bead.priority}
     >
-      <CardHeader className="p-3 pb-0 space-y-2">
+      {/* Decorative gradient overlay for idle cards */}
+      {state === 'idle' && (
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-transparent to-secondary/0 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+      )}
+
+      <CardHeader className="p-4 pb-0 space-y-3 relative z-10">
         {config.showId && (
-          <div className="flex justify-between items-start">
-            <span className="font-mono text-xs text-muted-foreground font-bold">{bead.id}</span>
-            <div className="flex items-center gap-1">
-              <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, bead.status)}`}>
+          <div className="flex justify-between items-start gap-2">
+            <span className="font-mono text-xs text-muted-foreground font-bold bg-black/5 dark:bg-white/5 px-2 py-1 rounded-md">{bead.id}</span>
+            <div className="flex items-center gap-1.5">
+              <Badge className={`text-[10px] px-2 py-0.5 font-bold ${getPriorityColor(bead.priority, bead.status)} rounded-md`}>
                 P{bead.priority}
               </Badge>
-              <Badge variant="outline" className={`text-[10px] px-2 py-0 font-medium ${typeConfig.className}`}>
+              <Badge variant="outline" className={`text-[10px] px-2 py-0.5 font-medium ${typeConfig.className} rounded-md`}>
                 {typeConfig.label}
               </Badge>
             </div>
           </div>
         )}
-        
+
         {isGeneratingState && config.icon && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
             {config.icon}
-            Generating title...
-            <div className="flex-1 h-1 bg-border rounded overflow-hidden">
-              <div className="h-full bg-primary/50 animate-pulse w-2/3 skeleton"></div>
+            <span className="font-medium">Generating title...</span>
+            <div className="flex-1 h-1.5 bg-blue-200 dark:bg-blue-900 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 animate-pulse w-2/3 rounded-full"></div>
             </div>
           </div>
         )}
-        
+
         {state === 'generating_plan' && config.icon && (
-          <div className="flex items-center gap-2 text-xs text-[var(--color-info)]">
+          <div className="flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400 font-medium bg-purple-50 dark:bg-purple-950/30 px-3 py-2 rounded-lg">
             {config.icon}
             Generating plan...
           </div>
         )}
 
         {isCompletedState && (
-          <div className="flex items-center gap-2 text-xs text-[var(--color-success)]">
-            ✓ Title generated
+          <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2 rounded-lg">
+            <span className="text-base">✨</span>
+            Title generated
           </div>
         )}
 
         {isErrorState && (
           <div className="space-y-2">
-            <div className="text-xs text-destructive">
-              Error: {isTransientBead ? bead.error : 'Unknown error'}
+            <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-3 py-2 rounded-lg font-medium">
+              {isTransientBead ? bead.error : 'Unknown error'}
             </div>
             {onRetry && (
               <Button
@@ -218,7 +224,7 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
                   e.stopPropagation()
                   onRetry()
                 }}
-                className="text-xs h-6 px-2"
+                className="text-xs h-7 px-3 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:bg-red-950 dark:hover:bg-red-900"
               >
                 <RefreshCw className="h-3 w-3 mr-1" />
                 Retry
@@ -236,7 +242,7 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
         )}
       </CardHeader>
 
-      <CardContent className="p-3 pt-2 text-xs text-muted-foreground line-clamp-2">
+      <CardContent className="p-4 pt-2 text-xs text-muted-foreground line-clamp-2 relative z-10">
         {bead.description || "No description"}
       </CardContent>
     </Card>
