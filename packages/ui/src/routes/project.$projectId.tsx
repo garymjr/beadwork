@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { getProject, getBeads, getBead, createBeadAsync, updateBeadTitle, generateTitle, type Bead, type TransientBead } from '@/lib/api'
+import { getProject, getBeads, getBead, createBeadAsync, updateBeadTitle, generateTitle, createPlanAsync, type Bead, type TransientBead } from '@/lib/api'
 import { useBeadsWatcher } from '@/hooks/useBeadsWatcher'
 import { getPriorityColor } from '@/lib/priority-utils'
 
@@ -77,7 +77,7 @@ function ProjectComponent() {
       const key = (b as any).realId || b.transientId
       transientMap.set(key, b)
     })
-    
+
     // Map each real bead and apply transient state if present
     return beads.map(bead => {
       const transient = transientMap.get(bead.id)
@@ -94,6 +94,10 @@ function ProjectComponent() {
       return bead
     })
   }, [beads, transientBeads])
+
+  const isBeadGeneratingPlan = (beadId: string) => {
+    return transientBeads.some(b => b.realId === beadId && b.status === 'generating_plan')
+  }
 
   const filteredBeads = useMemo(() => {
     if (!searchQuery.trim()) return allBeads
@@ -243,14 +247,23 @@ function ProjectComponent() {
   }
 
   const handleBeadClick = async (bead: BeadOrTransient) => {
-    // Only fetch full details for real beads, not transient ones
+    let beadToSelect: Bead | null = null
+
     if ('transientId' in bead) {
-      // For transient beads, we could show a different view or skip
-      return
+      // For transient beads with realId, fetch the actual bead data
+      const realId = (bead as any).realId
+      if (realId) {
+        const fullBead = await getBead(realId, project.path)
+        beadToSelect = fullBead
+      }
+    } else {
+      const fullBead = await getBead(bead.id, project.path)
+      beadToSelect = fullBead
     }
-    
-    const fullBead = await getBead(bead.id, project.path)
-    setSelectedBead(fullBead || bead)
+
+    if (beadToSelect) {
+      setSelectedBead(beadToSelect)
+    }
   }
 
   return (
@@ -374,11 +387,29 @@ function ProjectComponent() {
         )}
       </div>
 
-      <IssueSheet 
-        bead={selectedBead} 
+      <IssueSheet
+        bead={selectedBead}
         projectPath={project.path}
         isOpen={!!selectedBead}
+        isGeneratingPlan={selectedBead ? isBeadGeneratingPlan(selectedBead.id) : false}
         onClose={() => setSelectedBead(null)}
+        onPlanGenerationStart={(beadId, transientId) => {
+          setTransientBeads(prev => [...prev, {
+            transientId,
+            realId: beadId,
+            status: 'generating_plan',
+            title: selectedBead?.title || 'Generating plan...',
+            description: selectedBead?.description,
+            issue_type: selectedBead?.issue_type || 'task',
+            priority: selectedBead?.priority,
+            created_at: new Date().toISOString(),
+          }])
+          router.invalidate()
+        }}
+        onPlanGenerationEnd={(beadId) => {
+          setTransientBeads(prev => prev.filter(b => b.realId !== beadId))
+          router.invalidate()
+        }}
       />
     </div>
   )

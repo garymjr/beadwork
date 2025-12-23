@@ -17,7 +17,7 @@ export interface Bead {
 export interface TransientBead {
   transientId: string;
   description?: string;
-  status: 'generating' | 'error' | 'completed';
+  status: 'generating' | 'generating_plan' | 'error' | 'completed';
   title?: string;
   error?: string;
   retryCount?: number;
@@ -183,6 +183,20 @@ export async function createPlan(data: {
   issue_type?: string;
 }): Promise<{ success: boolean; plan?: any }> {
   return apiFetch(`/api/beads/${data.id}/plan`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function createPlanAsync(data: {
+  projectPath: string;
+  id: string;
+  title?: string;
+  description?: string;
+  issue_type?: string;
+  transientId: string;
+}): Promise<{ success: boolean; transientId: string }> {
+  return apiFetch(`/api/beads/${data.id}/plan/async`, {
     method: 'POST',
     body: JSON.stringify(data),
   });

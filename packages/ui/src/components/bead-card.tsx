@@ -5,7 +5,7 @@ import { Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getPriorityColor } from '@/lib/priority-utils'
 
-export type BeadState = 'idle' | 'generating' | 'completed' | 'error' | 'resolved'
+export type BeadState = 'idle' | 'generating' | 'generating_plan' | 'completed' | 'error' | 'resolved'
 
 export interface BeadData {
   id: string
@@ -47,8 +47,8 @@ interface StateConfig {
 
 const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   idle: {
-    bgClass: 'bg-white/80 hover:bg-white/90',
-    borderClass: 'border-white/20',
+    bgClass: 'bg-card/80 hover:bg-card/90',
+    borderClass: 'border-border/20',
     animationClass: 'animate-slide-in',
     showId: true,
     showPriority: true,
@@ -56,17 +56,26 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
     icon: null,
   },
   generating: {
-    bgClass: 'bg-white/60 border-dashed opacity-70',
-    borderClass: 'border-white/20',
+    bgClass: 'bg-card/60 border-dashed opacity-70',
+    borderClass: 'border-border/20',
     animationClass: 'animate-pulse-subtle',
     showId: false,
     showPriority: false,
     showTitle: false,
     icon: <Loader2 className="h-3 w-3 animate-spin" />,
   },
+  generating_plan: {
+    bgClass: 'bg-card/60 border-dashed opacity-70 border-[var(--color-info)]/30',
+    borderClass: 'border-[var(--color-info)]/30',
+    animationClass: 'animate-pulse-subtle',
+    showId: true,
+    showPriority: true,
+    showTitle: true,
+    icon: <Loader2 className="h-3 w-3 animate-spin text-[var(--color-info)]" />,
+  },
   completed: {
-    bgClass: 'bg-white/90 border-green-200',
-    borderClass: 'border-green-200',
+    bgClass: 'bg-card/90 border-[var(--color-success)]/30',
+    borderClass: 'border-[var(--color-success)]/30',
     animationClass: 'animate-fade-in card-success-enter',
     showId: false,
     showPriority: false,
@@ -74,8 +83,8 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
     icon: null,
   },
   error: {
-    bgClass: 'bg-red-50 border-red-200',
-    borderClass: 'border-red-200',
+    bgClass: 'bg-destructive/10 border-destructive/30',
+    borderClass: 'border-destructive/30',
     animationClass: 'animate-shake',
     showId: false,
     showPriority: false,
@@ -83,8 +92,8 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
     icon: null,
   },
   resolved: {
-    bgClass: 'bg-white/80 hover:bg-white/90',
-    borderClass: 'border-white/20',
+    bgClass: 'bg-card/80 hover:bg-card/90',
+    borderClass: 'border-border/20',
     animationClass: '',
     showId: true,
     showPriority: true,
@@ -167,21 +176,28 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
           </div>
         )}
         
+        {state === 'generating_plan' && config.icon && (
+          <div className="flex items-center gap-2 text-xs text-[var(--color-info)]">
+            {config.icon}
+            Generating plan...
+          </div>
+        )}
+
         {isCompletedState && (
-          <div className="flex items-center gap-2 text-xs text-green-600">
+          <div className="flex items-center gap-2 text-xs text-[var(--color-success)]">
             ✓ Title generated
           </div>
         )}
-        
+
         {isErrorState && (
           <div className="space-y-2">
-            <div className="text-xs text-red-600">
+            <div className="text-xs text-destructive">
               Error: {isTransientBead ? bead.error : 'Unknown error'}
             </div>
             {onRetry && (
-              <Button 
-                size="sm" 
-                variant="outline" 
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={(e) => {
                   e.stopPropagation()
                   onRetry()
@@ -194,17 +210,17 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
             )}
           </div>
         )}
-        
+
         {config.showTitle && (
           <CardTitle className={`text-sm font-semibold leading-tight ${
-            isGeneratingState ? 'text-gray-500 italic' : 'text-gray-800'
+            isGeneratingState ? 'text-muted-foreground italic' : 'text-foreground'
           }`}>
             {bead.title}
           </CardTitle>
         )}
       </CardHeader>
-      
-      <CardContent className="p-3 pt-2 text-xs text-gray-600 line-clamp-2">
+
+      <CardContent className="p-3 pt-2 text-xs text-muted-foreground line-clamp-2">
         {bead.description || "No description"}
       </CardContent>
     </Card>

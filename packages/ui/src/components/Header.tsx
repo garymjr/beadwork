@@ -12,10 +12,10 @@ export default function Header() {
 
   return (
     <>
-      <header className="p-4 flex items-center bg-gradient-to-r from-primary via-purple-600 to-accent text-white shadow-xl backdrop-blur-sm border-b border-border/20">
+      <header className="p-4 flex items-center bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-xl backdrop-blur-sm border-b border-border/20">
         <button
           onClick={() => setIsOpen(true)}
-          className="p-2 hover:bg-white/20 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
+          className="p-2 hover:bg-card/20 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
           aria-label="Open menu"
         >
           <Menu size={24} className="drop-shadow-sm" />
@@ -30,22 +30,22 @@ export default function Header() {
           </Link>
         </h1>
         <div className="ml-auto flex items-center gap-2">
-          <div className="w-2 h-2 bg-emphasis rounded-full animate-pulse"></div>
-          <div className="w-2 h-2 bg-highlight rounded-full animate-pulse delay-75"></div>
-          <div className="w-2 h-2 bg-success rounded-full animate-pulse delay-150"></div>
+          <div className="w-2 h-2 bg-[var(--color-emphasis)] rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-[var(--color-highlight)] rounded-full animate-pulse delay-75"></div>
+          <div className="w-2 h-2 bg-[var(--color-success)] rounded-full animate-pulse delay-150"></div>
         </div>
       </header>
 
       <aside
-        className={`fixed top-0 left-0 h-full w-80 bg-gradient-to-b from-primary via-purple-900 to-accent text-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col backdrop-blur-md border-r border-border/30 ${
+        className={`fixed top-0 left-0 h-full w-80 bg-gradient-to-b from-primary to-accent text-primary-foreground shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col backdrop-blur-md border-r border-border/30 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-white/20 bg-white/5 backdrop-blur-sm">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-white to-accent bg-clip-text text-transparent">Navigation</h2>
+        <div className="flex items-center justify-between p-4 border-b border-border/20 bg-card/5 backdrop-blur-sm">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-primary-foreground to-accent bg-clip-text text-transparent">Navigation</h2>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-2 hover:bg-white/20 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
+            className="p-2 hover:bg-card/20 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
             aria-label="Close menu"
           >
             <X size={24} className="drop-shadow-sm" />
@@ -56,10 +56,10 @@ export default function Header() {
           <Link
             to="/"
             onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/10 transition-all duration-300 mb-2 hover:scale-102 hover:shadow-md backdrop-blur-sm border border-transparent hover:border-white/20"
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-card/10 transition-all duration-300 mb-2 hover:scale-102 hover:shadow-md backdrop-blur-sm border border-transparent hover:border-border/20"
             activeProps={{
               className:
-                'flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-emphasis to-highlight hover:from-emphasis/90 hover:to-highlight/90 transition-all duration-300 mb-2 shadow-lg border border-white/30 scale-102',
+                'flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-[var(--color-emphasis)] to-[var(--color-highlight)] hover:from-[var(--color-emphasis)]/90 hover:to-[var(--color-highlight)]/90 transition-all duration-300 mb-2 shadow-lg border border-border/30 scale-102',
             }}
           >
             <Home size={20} className="drop-shadow-sm" />

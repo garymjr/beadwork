@@ -124,7 +124,7 @@ export function ProjectSidebar({ projects }: { projects: Project[] }) {
                       <Search className="h-4 w-4" />
                     </Button>
                   </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
+                  {error && <p className="text-sm text-destructive">{error}</p>}
                 </div>
                 <Button onClick={handleAdd}>Add</Button>
               </div>
@@ -187,10 +187,10 @@ function ProjectItem({
             {stats.summary.open_issues}
           </Badge>
         )}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
           onClick={(e) => onRemove(e, project.id)}
         >
           <Trash2 className="h-3 w-3" />

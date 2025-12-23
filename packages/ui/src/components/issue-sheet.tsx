@@ -32,11 +32,15 @@ interface IssueSheetProps {
   projectPath: string
   isOpen: boolean
   onClose: () => void
+  isGeneratingPlan?: boolean
+  onPlanGenerationStart?: (beadId: string, transientId: string) => void
+  onPlanGenerationEnd?: (beadId: string) => void
 }
 
-export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetProps) {
+export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPlan, onPlanGenerationStart, onPlanGenerationEnd }: IssueSheetProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [isCreatingPlan, setIsCreatingPlan] = useState(isGeneratingPlan || false)
   const [formData, setFormData] = useState<Partial<Bead>>({})
   const [comments, setComments] = useState<Comment[]>([])
   const [dependencies, setDependencies] = useState<Dependency[]>([])
@@ -56,6 +60,10 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
       fetchDependencies()
     }
   }, [bead])
+
+  useEffect(() => {
+    setIsCreatingPlan(isGeneratingPlan || false)
+  }, [isGeneratingPlan])
 
   const fetchComments = async () => {
     if (!bead) return
@@ -91,23 +99,34 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
   }
 
   const handleCreatePlan = async () => {
-    if (!bead) return
-    setLoading(true)
+    if (!bead || !formData.description) return
+    setIsCreatingPlan(true)
+    
+    const transientId = crypto.randomUUID()
+    
     try {
+      if (onPlanGenerationStart) {
+        onPlanGenerationStart(bead.id, transientId)
+      }
+      
       await createPlan({
         projectPath,
         id: bead.id,
         title: formData.title || bead.title,
-        description: formData.description || bead.description,
+        description: formData.description,
         issue_type: bead.issue_type
       })
+      
       await fetchComments()
       await fetchDependencies()
       router.invalidate()
     } catch (e) {
       console.error(e)
     } finally {
-      setLoading(false)
+      setIsCreatingPlan(false)
+      if (onPlanGenerationEnd) {
+        onPlanGenerationEnd(bead.id)
+      }
     }
   }
 
@@ -192,16 +211,16 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="outline">{bead.id}</Badge>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleCopyId} 
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCopyId}
                 className="h-6 w-6 hover:bg-transparent hover:text-accent"
               >
-                <Copy className={`h-3 w-3 ${copiedId === bead.id ? "text-green-600" : ""}`} />
+                <Copy className={`h-3 w-3 ${copiedId === bead.id ? "text-[var(--color-success)]" : ""}`} />
               </Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleDelete} className="text-red-500 hover:text-red-600">
+            <Button variant="ghost" size="icon" onClick={handleDelete} className="text-destructive hover:text-destructive">
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
@@ -279,9 +298,9 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
             </TabsContent>
 
             <TabsContent value="comments" className="mt-0 flex flex-col h-full space-y-4">
-              <ScrollArea className="flex-1 border rounded-md p-4 bg-zinc-50/50">
+              <ScrollArea className="flex-1 border rounded-md p-4 bg-muted/50">
                 {comments?.length === 0 || !comments ? (
-                  <div className="text-center py-8 text-zinc-500">
+                  <div className="text-center py-8 text-muted-foreground">
                     <MessageSquare className="mx-auto h-8 w-8 mb-2 opacity-20" />
                     <p className="text-sm">No comments yet</p>
                   </div>
@@ -297,11 +316,11 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold">{comment.author}</span>
-                            <span className="text-[10px] text-zinc-500">
+                            <span className="text-[10px] text-muted-foreground">
                               {new Date(comment.created_at).toLocaleString()}
                             </span>
                           </div>
-                          <div className="text-sm bg-white border rounded-md p-2 shadow-sm whitespace-pre-wrap">
+                          <div className="text-sm bg-card border rounded-md p-2 shadow-sm whitespace-pre-wrap">
                             {comment.text}
                           </div>
                         </div>
@@ -326,8 +345,8 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
 
             <TabsContent value="dependencies" className="mt-0 space-y-4">
               <div className="flex gap-2">
-                <Input 
-                  placeholder="Enter issue ID to add as dependency..." 
+                <Input
+                  placeholder="Enter issue ID to add as dependency..."
                   value={newDepId}
                   onChange={(e) => setNewDepId(e.target.value)}
                 />
@@ -339,25 +358,25 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
 
               <div className="border rounded-md">
                 {dependencies?.length === 0 || !dependencies ? (
-                  <div className="text-center py-8 text-zinc-500">
+                  <div className="text-center py-8 text-muted-foreground">
                     <LinkIcon className="mx-auto h-8 w-8 mb-2 opacity-20" />
                     <p className="text-sm">No dependencies</p>
                   </div>
                 ) : (
                   <div className="divide-y">
                     {dependencies?.map((dep) => (
-                      <div key={dep.id} className="flex items-center justify-between p-3 bg-white">
+                      <div key={dep.id} className="flex items-center justify-between p-3 bg-card">
                         <div className="flex items-center gap-3">
                           <Badge variant="outline" className="font-mono text-[10px]">{dep.id}</Badge>
                           <div className="flex flex-col">
                             <span className="text-sm font-medium">{dep.title}</span>
-                            <span className="text-[10px] text-zinc-500 uppercase">{dep.status}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase">{dep.status}</span>
                           </div>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-zinc-400 hover:text-red-500"
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           onClick={() => handleRemoveDependency(dep.id)}
                         >
                           <X className="h-4 w-4" />
@@ -375,10 +394,10 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
           <Button 
             variant="secondary" 
             onClick={handleCreatePlan} 
-            disabled={loading || !formData.description}
+            disabled={isCreatingPlan || !formData.description}
             className="mr-auto"
           >
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {isCreatingPlan ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             Create Plan
           </Button>
           <Button variant="outline" onClick={onClose}>Cancel</Button>

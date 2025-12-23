@@ -18,30 +18,30 @@ export const PRIORITY_LABELS: Record<number, string> = {
 export function getPriorityColor(priority: number, status: string): string {
   const priorityColors: Record<string, Record<number, string>> = {
     open: {
-      0: 'bg-red-500 text-white',
-      1: 'bg-orange-500 text-white',
-      2: 'bg-yellow-500 text-black',
-      3: 'bg-blue-500 text-white',
-      4: 'bg-gray-500 text-white'
+      0: 'bg-[var(--destructive)] text-destructive-foreground',
+      1: 'bg-[var(--color-warning)] text-foreground',
+      2: 'bg-[var(--color-info)] text-primary-foreground',
+      3: 'bg-[var(--color-success)] text-primary-foreground',
+      4: 'bg-muted text-foreground'
     },
     in_progress: {
-      0: 'bg-red-600 text-white',
-      1: 'bg-purple-600 text-white',
-      2: 'bg-blue-600 text-white',
-      3: 'bg-indigo-500 text-white',
-      4: 'bg-gray-600 text-white'
+      0: 'bg-[var(--destructive)] text-destructive-foreground',
+      1: 'bg-[var(--color-emphasis)] text-primary-foreground',
+      2: 'bg-[var(--color-info)] text-primary-foreground',
+      3: 'bg-primary text-primary-foreground',
+      4: 'bg-muted text-foreground'
     },
     done: {
-      0: 'bg-green-700 text-white',
-      1: 'bg-green-600 text-white',
-      2: 'bg-emerald-600 text-white',
-      3: 'bg-teal-600 text-white',
-      4: 'bg-gray-600 text-white'
+      0: 'bg-[var(--color-success)] text-primary-foreground',
+      1: 'bg-[var(--color-success)] text-primary-foreground',
+      2: 'bg-[var(--color-success)] text-primary-foreground',
+      3: 'bg-[var(--color-info)] text-primary-foreground',
+      4: 'bg-muted text-foreground'
     }
   }
-  
+
   const statusColors = priorityColors[status] || priorityColors.open
-  return statusColors[priority] || 'bg-gray-500 text-white'
+  return statusColors[priority] || 'bg-muted text-foreground'
 }
 
 /**

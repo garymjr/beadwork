@@ -48,7 +48,7 @@ export function DirectoryPicker({ onSelect, onCancel }: DirectoryPickerProps) {
           </div>
         )}
 
-        {error && <div className="text-red-500 text-sm p-2">{error}</div>}
+        {error && <div className="text-destructive text-sm p-2">{error}</div>}
 
         <div className="space-y-1">
           {data?.parentPath && (
@@ -71,7 +71,7 @@ export function DirectoryPicker({ onSelect, onCancel }: DirectoryPickerProps) {
               className="w-full justify-start gap-2"
               onClick={() => loadDirectory(entry.path)}
             >
-              <Folder className="h-4 w-4 text-blue-500" />
+              <Folder className="h-4 w-4 text-[var(--color-info)]" />
               <span className="truncate">{entry.name}</span>
               <ChevronRight className="ml-auto h-3 w-3 opacity-50" />
             </Button>

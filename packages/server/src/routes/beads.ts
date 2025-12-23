@@ -323,6 +323,46 @@ beads.post("/:id/plan", async (c) => {
   }
 });
 
+// POST /api/beads/:id/plan/async - Create a plan for a bead asynchronously
+beads.post("/:id/plan/async", async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const { projectPath, title, description, issue_type, transientId } = body;
+
+  if (!projectPath) {
+    return c.json({ error: "projectPath is required" }, 400);
+  }
+
+  // Start async plan generation (fire and forget)
+  createPlanAction(
+    title || '',
+    description || '',
+    issue_type || 'task',
+    projectPath
+  ).then(async (planResult) => {
+    // Create subtasks and add as dependencies
+    for (const subtask of planResult.subtasks) {
+      const args = ['create', subtask.title];
+      if (subtask.description) args.push('--description', subtask.description);
+      if (subtask.type) args.push('--type', subtask.type);
+      
+      const output = await runBd(args, projectPath);
+      const match = output.match(/Created issue: ([\w-]+)/);
+      if (match) {
+        const subtaskId = match[1];
+        await runBd(['dep', 'add', id, subtaskId], projectPath);
+      }
+    }
+    
+    console.log(`[async] Plan generation completed for ${id}`);
+  }).catch((e) => {
+    console.error(`[async] Failed to create plan for ${id}:`, e);
+  });
+
+  // Return immediately
+  return c.json({ success: true, transientId });
+});
+
 // POST /api/agent/generate-title - Generate a title from description
 beads.post("/agent/generate-title", async (c) => {
   const body = await c.req.json();
