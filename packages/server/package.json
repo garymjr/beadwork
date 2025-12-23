@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mariozechner/pi-coding-agent": "^0.27.2",
+    "chokidar": "^5.0.0",
     "hono": "^4.6.16",
     "zod": "^4.2.1"
   },

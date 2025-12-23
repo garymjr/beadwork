@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { getProject, getBeads, createBead, getBead, createBeadAsync, updateBeadTitle, generateTitle, type Bead, type TransientBead } from '@/lib/api'
+import { useBeadsWatcher } from '@/hooks/useBeadsWatcher'
 
 type BeadOrTransient = Bead | (TransientBead & { id: string })
 import { Button } from '@/components/ui/button'
@@ -28,6 +29,7 @@ import {
   TableRow 
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Wifi, WifiOff, Loader2 } from 'lucide-react'
 
 export const Route = createFileRoute('/project/$projectId')({
   loader: async ({ params }) => {
@@ -51,6 +53,21 @@ function ProjectComponent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board')
   const [transientBeads, setTransientBeads] = useState<TransientBead[]>([])
+
+  // Set up the beads watcher for real-time updates
+  const { status: connectionStatus } = useBeadsWatcher({
+    projectPath: project.path,
+    onUpdate: () => {
+      console.log('Beads updated, invalidating router cache')
+      router.invalidate()
+    },
+  })
+
+  const connectionStatusIcon = {
+    connected: <Wifi className="h-4 w-4 text-green-500" />,
+    connecting: <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />,
+    disconnected: <WifiOff className="h-4 w-4 text-red-500" />,
+  }[connectionStatus]
 
   const allBeads = useMemo(() => {
     const allTransient = transientBeads.map(b => ({
@@ -252,6 +269,10 @@ function ProjectComponent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {connectionStatusIcon}
+            <span className="capitalize">{connectionStatus}</span>
           </div>
         </div>
         <div className="flex gap-2">
