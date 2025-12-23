@@ -70,7 +70,7 @@ export function KanbanBoard({ beads, onBeadClick, onRetry }: KanbanBoardProps) {
   }
 
   return (
-    <div className="flex h-full gap-5 overflow-x-auto pb-4 px-1">
+    <div className="flex h-full gap-5 overflow-x-auto pb-4">
       {COLUMNS.map((col, index) => (
         <div
           key={col.id}
