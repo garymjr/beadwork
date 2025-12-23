@@ -39,3 +39,6 @@ next-env.d.ts
 
 # AI planning documents (ephemeral)
 history/
+
+# beadwork projects files
+**/beadwork.projects.json
