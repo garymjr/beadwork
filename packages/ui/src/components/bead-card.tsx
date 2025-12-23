@@ -48,7 +48,7 @@ interface StateConfig {
 const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   idle: {
     bgClass: 'bg-white dark:bg-surface/90',
-    borderClass: 'border-2 border-border/50',
+    borderClass: 'border border-black/5 dark:border-white/10',
     animationClass: 'animate-fade-in-up',
     showId: true,
     showPriority: true,
@@ -57,7 +57,7 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   },
   generating: {
     bgClass: 'bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50 dark:from-blue-950/40 dark:via-indigo-950/40 dark:to-blue-950/40 border-dashed animate-shimmer bg-[length:200%_100%]',
-    borderClass: 'border-2 border-blue-400 dark:border-blue-600',
+    borderClass: 'border border-blue-300/40 dark:border-blue-700/40',
     animationClass: 'animate-pulse-subtle',
     showId: false,
     showPriority: false,
@@ -66,7 +66,7 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   },
   generating_plan: {
     bgClass: 'bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 dark:from-purple-950/40 dark:via-pink-950/40 dark:to-purple-950/40 animate-shimmer bg-[length:200%_100%]',
-    borderClass: 'border-2 border-purple-400 dark:border-purple-600',
+    borderClass: 'border border-purple-300/40 dark:border-purple-700/40',
     animationClass: 'animate-pulse-subtle',
     showId: true,
     showPriority: true,
@@ -75,7 +75,7 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   },
   completed: {
     bgClass: 'bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-50 dark:from-emerald-950/40 dark:via-green-950/40 dark:to-emerald-950/40',
-    borderClass: 'border-2 border-emerald-400 dark:border-emerald-600',
+    borderClass: 'border border-emerald-300/40 dark:border-emerald-700/40',
     animationClass: 'animate-fade-in-up',
     showId: false,
     showPriority: false,
@@ -84,7 +84,7 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   },
   error: {
     bgClass: 'bg-gradient-to-br from-red-50 via-rose-50 to-red-50 dark:from-red-950/40 dark:via-rose-950/40 dark:to-red-950/40',
-    borderClass: 'border-2 border-red-400 dark:border-red-600',
+    borderClass: 'border border-red-300/40 dark:border-red-700/40',
     animationClass: 'animate-shake',
     showId: false,
     showPriority: false,
@@ -93,7 +93,7 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   },
   resolved: {
     bgClass: 'bg-white dark:bg-surface/90',
-    borderClass: 'border-2 border-border/50',
+    borderClass: 'border border-black/5 dark:border-white/10',
     animationClass: '',
     showId: true,
     showPriority: true,
