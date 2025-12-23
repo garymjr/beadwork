@@ -1,20 +1,25 @@
-import { createOpencode } from '@opencode-ai/sdk';
+import { createAgentSession, SessionManager } from '@mariozechner/pi-coding-agent';
 
 (async () => {
   try {
-    const { client } = await createOpencode({ config: { model: 'opencode/big-pickle' } });
-    const sessionResponse = await client.session.create({});
-    const sessionId = sessionResponse.data.id;
+    const { session } = await createAgentSession({
+      sessionManager: SessionManager.inMemory(),
+    });
 
-    console.log('Prompting session:', sessionId);
-    const result = await client.session.prompt({
-      path: { id: sessionId },
-      body: {
-        parts: [{ type: 'text', text: 'Say "hello"' }]
+    console.log('Session ID:', session.sessionId);
+
+    session.subscribe((event) => {
+      if (event.type === 'message_update' && event.assistantMessageEvent.type === 'text_delta') {
+        process.stdout.write(event.assistantMessageEvent.delta);
+      }
+      
+      if (event.type === 'agent_end') {
+        console.log('\n\nDone!');
+        process.exit(0);
       }
     });
-    console.log('Result:', JSON.stringify(result, null, 2));
-    process.exit(0);
+
+    await session.prompt('Say "hello"');
   } catch (e) {
     console.error(e);
     process.exit(1);

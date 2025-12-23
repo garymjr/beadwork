@@ -164,7 +164,7 @@ export async function removeDependency(projectPath: string, id: string, dependsO
 }
 
 export async function generateTitle(description: string, projectPath?: string): Promise<string> {
-  const result = await apiFetch('/api/beads/opencode/generate-title', {
+  const result = await apiFetch('/api/beads/agent/generate-title', {
     method: 'POST',
     body: JSON.stringify({ description, projectPath }),
   });

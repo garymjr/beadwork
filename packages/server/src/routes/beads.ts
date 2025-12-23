@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { runBd } from "../utils/beads.js";
-import { generateTitle, createPlanAction } from "../utils/opencode.js";
+import { generateTitle, createPlanAction } from "../utils/agent.js";
 
 const beads = new Hono();
 
@@ -323,8 +323,8 @@ beads.post("/:id/plan", async (c) => {
   }
 });
 
-// POST /api/opencode/generate-title - Generate a title from description
-beads.post("/opencode/generate-title", async (c) => {
+// POST /api/agent/generate-title - Generate a title from description
+beads.post("/agent/generate-title", async (c) => {
   const body = await c.req.json();
   const { description, projectPath } = body;
 
