@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { getProject, getBeads, createBead, getBead, createBeadAsync, updateBeadTitle, generateTitle, type Bead, type TransientBead } from '@/lib/api'
+import { getProject, getBeads, getBead, createBeadAsync, updateBeadTitle, generateTitle, type Bead, type TransientBead } from '@/lib/api'
 import { useBeadsWatcher } from '@/hooks/useBeadsWatcher'
 import { getPriorityColor } from '@/lib/priority-utils'
 
@@ -78,68 +78,21 @@ function ProjectComponent() {
       transientMap.set(key, b)
     })
     
-    // Get set of real IDs that have active transient states
-    const realIdsWithTransients = new Set<string>()
-    transientBeads.forEach(b => {
-      if ((b as any).realId) {
-        realIdsWithTransients.add((b as any).realId)
-      }
-    })
-    
-    // Filter out real beads that have active transient states, then merge
-    const mergedBeads = beads
-      .filter(bead => !realIdsWithTransients.has(bead.id))
-      .map(bead => {
-        const transient = transientMap.get(bead.id)
-        if (transient) {
-          // This bead has a transient state - use transient data but keep real ID
-          return {
-            ...bead,
-            transientId: transient.transientId,
-            transientStatus: transient.status,
-            error: transient.error,
-            retryCount: transient.retryCount
-          }
-        }
-        return bead
-      })
-    
-    // Add transient beads that don't have a real bead yet (by transient ID)
-    const orphanTransients = transientBeads.filter(b => !(b as any).realId).map(b => ({
-      id: b.transientId,
-      title: b.title || 'Generating title...',
-      description: b.description,
-      status: 'open',
-      priority: b.priority || 2,
-      issue_type: b.issue_type || 'task',
-      created_at: b.created_at,
-      transientId: b.transientId,
-      transientStatus: b.status,
-      error: b.error,
-      retryCount: b.retryCount
-    }))
-    
-    // Add transient beads that have a real ID - these replace the real bead temporarily
-    const transientWithRealId = transientBeads
-      .filter(b => (b as any).realId)
-      .map(b => {
-        const realId = (b as any).realId
+    // Map each real bead and apply transient state if present
+    return beads.map(bead => {
+      const transient = transientMap.get(bead.id)
+      if (transient) {
+        // This bead has an active transient state - apply it in place
         return {
-          id: realId, // Use the real ID so React sees it as the same element
-          transientId: b.transientId,
-          title: b.title || 'Generating title...',
-          description: b.description,
-          status: 'open',
-          priority: b.priority || 2,
-          issue_type: b.issue_type || 'task',
-          created_at: b.created_at,
-          transientStatus: b.status,
-          error: b.error,
-          retryCount: b.retryCount
+          ...bead,
+          transientId: transient.transientId,
+          transientStatus: transient.status,
+          error: transient.error,
+          retryCount: transient.retryCount
         }
-      })
-    
-    return [...orphanTransients, ...transientWithRealId, ...mergedBeads]
+      }
+      return bead
+    })
   }, [beads, transientBeads])
 
   const filteredBeads = useMemo(() => {
@@ -152,13 +105,16 @@ function ProjectComponent() {
     )
   }, [allBeads, searchQuery])
 
-  const retryTitleGeneration = async (transientId: string) => {
-    const transientBead = transientBeads.find(b => b.transientId === transientId)
+  const retryTitleGeneration = async (bead: BeadOrTransient) => {
+    const realId = 'transientId' in bead ? (bead as any).realId : bead.id
+    if (!realId) return
+    
+    const transientBead = transientBeads.find(b => (b as any).realId === realId)
     if (!transientBead) return
     
     // Update status to generating
     setTransientBeads(prev => prev.map(b => 
-      b.transientId === transientId 
+      (b as any).realId === realId 
         ? { ...b, status: 'generating', error: undefined, retryCount: (b.retryCount || 0) + 1 }
         : b
     ))
@@ -169,42 +125,27 @@ function ProjectComponent() {
         project.path
       )
       
-      // Get the real bead ID from the transient bead metadata
-      const realId = (transientBead as any).realId
-      
       // Update the real bead with the generated title
-      if (realId) {
-        await updateBeadTitle(
-          project.path,
-          realId,
-          title
-        )
-        
-        // Update transient to completed state - smooth transition
-        setTransientBeads(prev => prev.map(b => 
-          b.transientId === transientId 
-            ? { ...b, title, status: 'completed' }
-            : b
-        ))
-        
-        // Remove transient state after real bead data loads
-        setTimeout(() => {
-          router.invalidate()
-          setTimeout(() => {
-            setTransientBeads(prev => prev.filter(b => b.transientId !== transientId))
-          }, 300)
-        }, 500)
-      } else {
-        // If no real ID, update to error state
-        setTransientBeads(prev => prev.map(b => 
-          b.transientId === transientId 
-            ? { ...b, status: 'error', error: 'No real bead ID found' }
-            : b
-        ))
-      }
+      await updateBeadTitle(
+        project.path,
+        realId,
+        title
+      )
+      
+      // Update transient to completed state - smooth transition
+      setTransientBeads(prev => prev.map(b => 
+        (b as any).realId === realId 
+          ? { ...b, title, status: 'completed' }
+          : b
+      ))
+      
+      // Remove transient state after short delay
+      setTimeout(() => {
+        setTransientBeads(prev => prev.filter(b => (b as any).realId !== realId))
+      }, 500)
     } catch (error) {
       setTransientBeads(prev => prev.map(b => 
-        b.transientId === transientId 
+        (b as any).realId === realId 
           ? { ...b, status: 'error', error: (error as Error).message }
           : b
       ))
@@ -212,35 +153,32 @@ function ProjectComponent() {
   }
 
   const createTransientBead = async (description: string, type?: string, priority?: number) => {
-    const transientId = crypto.randomUUID()
-    const transientBead: TransientBead = {
-      transientId,
-      description,
-      status: 'generating',
-      title: 'Generating title...',
-      issue_type: type || 'task',
-      priority: priority || 2,
-      created_at: new Date().toISOString(),
-    }
-    
-    setTransientBeads(prev => [...prev, transientBead])
-    
     try {
-      // Create the bead immediately with placeholder title
+      // Create the bead immediately with placeholder title - gets real ID
       const createdBead = await createBeadAsync({ 
         projectPath: project.path, 
         description,
         type: type || 'task',
         priority: priority || 2,
-        transientId
       })
       
-      // Store the real ID in the transient bead - this keeps the same element
-      setTransientBeads(prev => prev.map(b => 
-        b.transientId === transientId 
-          ? { ...b, realId: createdBead.id, title: createdBead.title || 'Generating title...' }
-          : b
-      ))
+      // Add transient state tracking for the real bead ID
+      const transientId = crypto.randomUUID()
+      const transientBead: TransientBead = {
+        transientId,
+        realId: createdBead.id,
+        description,
+        status: 'generating',
+        title: 'Generating title...',
+        issue_type: type || 'task',
+        priority: priority || 2,
+        created_at: new Date().toISOString(),
+      }
+      
+      setTransientBeads(prev => [...prev, transientBead])
+      
+      // Invalidate to show the bead in the UI with generating state
+      router.invalidate()
       
       // Generate title in background
       try {
@@ -256,39 +194,30 @@ function ProjectComponent() {
           title
         )
         
-        // Update transient to completed state - card transitions smoothly
+        // Update transient to completed state - card transitions smoothly in place
         setTransientBeads(prev => prev.map(b => 
-          b.transientId === transientId 
+          b.realId === createdBead.id 
             ? { ...b, title, status: 'completed' }
             : b
         ))
         
-        // Invalidate to refresh the real bead data
-        // The transient bead will be merged with the real bead via realId
+        // Remove transient state after short delay
         setTimeout(() => {
-          router.invalidate()
-          // Remove transient state after real bead data has loaded
-          // This keeps the same card element but removes transient metadata
-          setTimeout(() => {
-            setTransientBeads(prev => prev.filter(b => b.transientId !== transientId))
-          }, 300)
+          setTransientBeads(prev => prev.filter(b => b.realId !== createdBead.id))
         }, 500)
         
         return { transientId, realId: createdBead.id, title }
       } catch (error) {
+        // Update transient to error state
         setTransientBeads(prev => prev.map(b => 
-          b.transientId === transientId 
+          b.realId === createdBead.id 
             ? { ...b, status: 'error', error: (error as Error).message }
             : b
         ))
         throw error
       }
     } catch (error) {
-      setTransientBeads(prev => prev.map(b => 
-        b.transientId === transientId 
-          ? { ...b, status: 'error', error: (error as Error).message }
-          : b
-      ))
+      // If bead creation fails, show error in dialog
       throw error
     }
   }
@@ -401,7 +330,7 @@ function ProjectComponent() {
 
       <div className="flex-1 overflow-hidden">
         {viewMode === 'board' ? (
-          <KanbanBoard beads={filteredBeads} onBeadClick={handleBeadClick} onRetryGeneration={retryTitleGeneration} />
+          <KanbanBoard beads={filteredBeads} onBeadClick={handleBeadClick} onRetry={retryTitleGeneration} />
         ) : (
           <div className="border rounded-lg bg-white overflow-hidden flex flex-col h-full">
             <Table>
@@ -428,8 +357,8 @@ function ProjectComponent() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, bead.status)}`}>
-                        P{bead.priority}
+                      <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority ?? 2, bead.status)}`}>
+                        P{bead.priority ?? 2}
                       </Badge>
                     </TableCell>
                   </TableRow>

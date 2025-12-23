@@ -5,9 +5,9 @@ import { Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getPriorityColor } from '@/lib/priority-utils'
 
-export type BeadOrTransient = Bead | (TransientBead & { id: string })
+export type BeadState = 'idle' | 'generating' | 'completed' | 'error' | 'resolved'
 
-export interface UnifiedBead {
+export interface BeadData {
   id: string
   realId?: string
   title: string
@@ -16,86 +16,175 @@ export interface UnifiedBead {
   priority: number
   issue_type: string
   created_at?: string
-  // Transient state properties
-  transientState?: 'generating' | 'error' | 'completed' | 'resolved'
-  error?: string
-  transientId?: string
 }
 
-interface BeadCardProps {
+export interface TransientBeadData extends BeadData {
+  transientId: string
+  state: BeadState
+  error?: string
+}
+
+export type UnifiedBead = BeadData | TransientBeadData
+
+export type BeadOrTransient = Bead | (TransientBead & { id: string })
+
+export interface BeadCardProps {
   bead: UnifiedBead
   onClick: () => void
-  onRetryGeneration?: (transientId: string) => void
+  onRetry?: () => void
   columnCardBorder: string
 }
 
-export function BeadCard({ bead, onClick, onRetryGeneration, columnCardBorder }: BeadCardProps) {
-  const isTransient = bead.transientState !== undefined && bead.transientState !== 'resolved'
-  const isGenerating = bead.transientState === 'generating'
-  const hasError = bead.transientState === 'error'
-  const isCompleted = bead.transientState === 'completed'
-  const isResolved = bead.transientState === 'resolved'
-  
-  // Determine visual state classes
-  const getStateClasses = () => {
-    const baseClasses = 'cursor-pointer card-state-transition hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm border border-white/20'
-    
-    if (isGenerating) {
-      return `${baseClasses} bg-white/60 border-dashed opacity-70 animate-pulse-subtle`
-    }
-    
-    if (hasError) {
-      return `${baseClasses} bg-red-50 border-red-200 animate-shake`
-    }
-    
-    if (isCompleted) {
-      return `${baseClasses} bg-white/90 border-green-200 animate-fade-in card-success-enter`
-    }
-    
-    // Regular bead or resolved transient
-    return `${baseClasses} bg-white/80 hover:bg-white/90 ${columnCardBorder} animate-slide-in`
+interface StateConfig {
+  bgClass: string
+  borderClass: string
+  animationClass: string
+  showId: boolean
+  showPriority: boolean
+  showTitle: boolean
+  icon: React.ReactNode | null
+}
+
+const STATE_CONFIGS: Record<BeadState, StateConfig> = {
+  idle: {
+    bgClass: 'bg-white/80 hover:bg-white/90',
+    borderClass: 'border-white/20',
+    animationClass: 'animate-slide-in',
+    showId: true,
+    showPriority: true,
+    showTitle: true,
+    icon: null,
+  },
+  generating: {
+    bgClass: 'bg-white/60 border-dashed opacity-70',
+    borderClass: 'border-white/20',
+    animationClass: 'animate-pulse-subtle',
+    showId: false,
+    showPriority: false,
+    showTitle: false,
+    icon: <Loader2 className="h-3 w-3 animate-spin" />,
+  },
+  completed: {
+    bgClass: 'bg-white/90 border-green-200',
+    borderClass: 'border-green-200',
+    animationClass: 'animate-fade-in card-success-enter',
+    showId: false,
+    showPriority: false,
+    showTitle: true,
+    icon: null,
+  },
+  error: {
+    bgClass: 'bg-red-50 border-red-200',
+    borderClass: 'border-red-200',
+    animationClass: 'animate-shake',
+    showId: false,
+    showPriority: false,
+    showTitle: false,
+    icon: null,
+  },
+  resolved: {
+    bgClass: 'bg-white/80 hover:bg-white/90',
+    borderClass: 'border-white/20',
+    animationClass: '',
+    showId: true,
+    showPriority: true,
+    showTitle: true,
+    icon: null,
+  },
+}
+
+export function getBeadState(bead: UnifiedBead): BeadState {
+  return 'state' in bead ? bead.state : 'idle'
+}
+
+export function isTransient(bead: UnifiedBead): bead is TransientBeadData {
+  return 'state' in bead
+}
+
+export function createTransientBead(
+  bead: BeadOrTransient,
+  state: BeadState,
+  error?: string
+): UnifiedBead {
+  const baseData: BeadData = {
+    id: bead.id,
+    realId: 'realId' in bead ? bead.realId : undefined,
+    title: bead.title || 'Generating title...',
+    description: bead.description || '',
+    status: bead.status,
+    priority: bead.priority || 2,
+    issue_type: bead.issue_type || 'task',
+    created_at: bead.created_at,
   }
-  
+
+  if ('transientId' in bead) {
+    return {
+      ...baseData,
+      transientId: bead.transientId,
+      state,
+      error,
+    }
+  }
+
+  return baseData
+}
+
+export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardProps) {
+  const state = getBeadState(bead)
+  const isTransientBead = isTransient(bead)
+  const config = STATE_CONFIGS[state]
+
+  const getStateClasses = () => {
+    const baseClasses = 'cursor-pointer card-state-transition hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm border'
+    return `${baseClasses} ${config.bgClass} ${config.borderClass} ${config.animationClass} ${columnCardBorder}`
+  }
+
+  const isErrorState = state === 'error'
+  const isGeneratingState = state === 'generating'
+  const isCompletedState = state === 'completed'
+
   return (
     <Card 
       className={getStateClasses()}
       onClick={onClick}
     >
       <CardHeader className="p-3 pb-0 space-y-1">
-        {!isTransient && (
+        {config.showId && (
           <div className="flex justify-between items-start">
             <span className="font-mono text-xs text-muted-foreground font-bold">{bead.id}</span>
-            <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, bead.status)}`}>
-              P{bead.priority}
-            </Badge>
+            {config.showPriority && (
+              <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, bead.status)}`}>
+                P{bead.priority}
+              </Badge>
+            )}
           </div>
         )}
         
-        {isGenerating && (
+        {isGeneratingState && config.icon && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" />
+            {config.icon}
             Generating title...
           </div>
         )}
         
-        {isCompleted && (
+        {isCompletedState && (
           <div className="flex items-center gap-2 text-xs text-green-600">
             ✓ Title generated
           </div>
         )}
         
-        {hasError && (
+        {isErrorState && (
           <div className="space-y-2">
             <div className="text-xs text-red-600">
-              Error: {bead.error}
+              Error: {isTransientBead ? bead.error : 'Unknown error'}
             </div>
-            {onRetryGeneration && bead.transientId && (
+            {onRetry && (
               <Button 
                 size="sm" 
                 variant="outline" 
                 onClick={(e) => {
                   e.stopPropagation()
-                  onRetryGeneration(bead.transientId!)
+                  onRetry()
                 }}
                 className="text-xs h-6 px-2"
               >
@@ -106,9 +195,9 @@ export function BeadCard({ bead, onClick, onRetryGeneration, columnCardBorder }:
           </div>
         )}
         
-        {(!isTransient || isResolved) && (
+        {config.showTitle && (
           <CardTitle className={`text-sm font-semibold leading-tight ${
-            isGenerating ? 'text-gray-500 italic' : 'text-gray-800'
+            isGeneratingState ? 'text-gray-500 italic' : 'text-gray-800'
           }`}>
             {bead.title}
           </CardTitle>

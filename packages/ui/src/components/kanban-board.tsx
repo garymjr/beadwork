@@ -1,13 +1,11 @@
-import { type Bead, type TransientBead } from '@/lib/api'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
-import { BeadCard, type UnifiedBead, type BeadOrTransient } from '@/components/bead-card'
-import { getPriorityColor } from '@/lib/priority-utils'
+import { BeadCard, type UnifiedBead, type BeadOrTransient, createTransientBead } from '@/components/bead-card'
 
 interface KanbanBoardProps {
   beads: BeadOrTransient[]
   onBeadClick: (bead: BeadOrTransient) => void
-  onRetryGeneration?: (transientId: string) => void
+  onRetry?: (bead: BeadOrTransient) => void
 }
 
 const COLUMNS = [
@@ -37,11 +35,33 @@ const COLUMNS = [
   },
 ]
 
-export function KanbanBoard({ beads, onBeadClick, onRetryGeneration }: KanbanBoardProps) {
+export function KanbanBoard({ beads, onBeadClick, onRetry }: KanbanBoardProps) {
   const getColumnBeads = (status: string) => {
-    // Map various closed statuses to 'done' or keep specific
     if (status === 'done') return beads.filter(b => b.status === 'done' || b.status === 'closed')
     return beads.filter(b => b.status === status)
+  }
+
+  const toUnifiedBead = (bead: BeadOrTransient): UnifiedBead => {
+    const isTransient = 'transientId' in bead
+    
+    if (isTransient) {
+      const transientBead = bead as any
+      const state = transientBead.transientStatus === 'generating' 
+        ? 'generating' as const
+        : transientBead.transientStatus === 'error' 
+        ? 'error' as const
+        : transientBead.transientStatus === 'completed' 
+        ? 'completed' as const
+        : 'resolved' as const
+      
+      return createTransientBead(
+        bead,
+        state,
+        transientBead.error
+      )
+    }
+    
+    return createTransientBead(bead, 'resolved')
   }
 
   return (
@@ -56,46 +76,15 @@ export function KanbanBoard({ beads, onBeadClick, onRetryGeneration }: KanbanBoa
           </div>
           <ScrollArea className="flex-1 p-2">
             <div className="space-y-2">
-              {getColumnBeads(col.id).map(bead => {
-                const isTransient = 'transientId' in bead
-                const transientBead = isTransient ? bead as any : null
-                
-                // Convert to UnifiedBead format
-                const unifiedBead: UnifiedBead = isTransient ? {
-                  id: bead.id,
-                  transientId: transientBead.transientId,
-                  title: bead.title,
-                  description: bead.description || '',
-                  status: 'open',
-                  priority: bead.priority || 2,
-                  issue_type: bead.issue_type || 'task',
-                  created_at: bead.created_at,
-                  transientState: transientBead.transientStatus === 'generating' ? 'generating' 
-                    : transientBead.transientStatus === 'error' ? 'error'
-                    : transientBead.transientStatus === 'completed' ? 'completed'
-                    : undefined,
-                  error: transientBead?.error
-                } : {
-                  id: bead.id,
-                  title: bead.title,
-                  description: bead.description || '',
-                  status: bead.status,
-                  priority: bead.priority || 2,
-                  issue_type: bead.issue_type || 'task',
-                  created_at: bead.created_at,
-                  transientState: 'resolved'
-                }
-                
-                return (
-                  <BeadCard
-                    key={bead.id}
-                    bead={unifiedBead}
-                    onClick={() => onBeadClick(bead)}
-                    onRetryGeneration={onRetryGeneration}
-                    columnCardBorder={col.cardBorder}
-                  />
-                )
-              })}
+              {getColumnBeads(col.id).map(bead => (
+                <BeadCard
+                  key={bead.id}
+                  bead={toUnifiedBead(bead)}
+                  onClick={() => onBeadClick(bead)}
+                  onRetry={onRetry ? () => onRetry(bead) : undefined}
+                  columnCardBorder={col.cardBorder}
+                />
+              ))}
             </div>
           </ScrollArea>
         </div>

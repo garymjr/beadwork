@@ -125,7 +125,7 @@ export async function updateBead(data: {
   });
 }
 
-export async function updateBeadTitle(projectPath: string, id: string, title: string): Promise<{ success: boolean; title: string }> {
+export async function updateBeadTitle(projectPath: string, id: string, title: string): Promise<{ success: boolean }> {
   return updateBead({ projectPath, id, title });
 }
 
@@ -216,11 +216,4 @@ export async function getDirectoryListing(path?: string): Promise<DirectoryListi
   return apiFetch(`/api/filesystem/directory${query}`);
 }
 
-export type {
-  Bead,
-  TransientBead,
-  Comment,
-  Dependency,
-  Project,
-  DirectoryListing,
-};
+
