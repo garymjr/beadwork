@@ -21,6 +21,7 @@ export const getAgent = async (projectPath?: string) => {
     const { session } = await createAgentSession({
       cwd: projectPath || process.cwd(),
       sessionManager: SessionManager.inMemory(),
+      thinkingLevel: "off",
       // Use default model discovery
     });
     return session;
@@ -110,16 +111,24 @@ export const createPlanAction = async (
       
       if (event.type === 'agent_end') {
         unsubscribe();
-        
+
+        // Debug logging
+        console.error('[agent] Full response received:', fullResponse.substring(0, 500) + (fullResponse.length > 500 ? '...' : ''));
+
         try {
           // Try to find JSON in the response if there's markdown around it
-          const jsonMatch = fullResponse.match(/\{[\s\S]*\}/);
+          // Use a more precise regex that matches balanced braces
+          const jsonMatch = fullResponse.match(/\{[\s\S]*?"plan"[\s\S]*?"subtasks"[\s\S]*?\[[\s\S]*\][\s\S]*\}/);
           const jsonStr = jsonMatch ? jsonMatch[0] : fullResponse;
-          
+
+          console.error('[agent] Extracted JSON:', jsonStr.substring(0, 200) + '...');
+
           const result = JSON.parse(jsonStr) as PlanResult;
           resolve(result);
         } catch (e) {
-          reject(new Error(`Failed to parse plan JSON: ${e}`));
+          console.error('[agent] Parse error details:', e);
+          console.error('[agent] Response that failed:', fullResponse);
+          reject(new Error(`Failed to parse plan JSON: ${e}. Response may not contain valid JSON.`));
         }
       }
       

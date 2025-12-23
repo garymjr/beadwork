@@ -25,6 +25,7 @@ import {
   type Dependency
 } from '@/lib/api'
 import { useRouter } from '@tanstack/react-router'
+import { getPriorityColor } from '@/lib/priority-utils'
 
 interface IssueSheetProps {
   bead: Bead | null
@@ -251,11 +252,16 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose }: IssueSheetPro
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Priority</label>
-                  <Input 
-                    type="number"
-                    value={formData.priority || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, priority: Number(e.target.value) }))}
-                  />
+                  <div className="flex gap-2">
+                    <Input 
+                      type="number"
+                      value={formData.priority || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, priority: Number(e.target.value) }))}
+                    />
+                    <Badge className={`text-xs px-3 py-0 font-bold ${getPriorityColor(formData.priority || 2, formData.status || bead.status)}`}>
+                      P{formData.priority || 2}
+                    </Badge>
+                  </div>
                 </div>
               </div>
 

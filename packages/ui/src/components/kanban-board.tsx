@@ -2,40 +2,12 @@ import { type Bead, type TransientBead } from '@/lib/api'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { BeadCard, type UnifiedBead, type BeadOrTransient } from '@/components/bead-card'
+import { getPriorityColor } from '@/lib/priority-utils'
 
 interface KanbanBoardProps {
   beads: BeadOrTransient[]
   onBeadClick: (bead: BeadOrTransient) => void
   onRetryGeneration?: (transientId: string) => void
-}
-
-const getPriorityColor = (priority: number | undefined, status: string) => {
-  const priorityColors: Record<string, Record<number, string>> = {
-    open: {
-      0: 'bg-red-500 text-white',
-      1: 'bg-orange-500 text-white',
-      2: 'bg-yellow-500 text-black',
-      3: 'bg-blue-500 text-white',
-      4: 'bg-gray-500 text-white'
-    },
-    in_progress: {
-      0: 'bg-red-600 text-white',
-      1: 'bg-purple-600 text-white',
-      2: 'bg-blue-600 text-white',
-      3: 'bg-indigo-500 text-white',
-      4: 'bg-gray-600 text-white'
-    },
-    done: {
-      0: 'bg-green-700 text-white',
-      1: 'bg-green-600 text-white',
-      2: 'bg-emerald-600 text-white',
-      3: 'bg-teal-600 text-white',
-      4: 'bg-gray-600 text-white'
-    }
-  }
-  
-  const statusColors = priorityColors[status] || priorityColors.open
-  return statusColors[priority ?? 2] || 'bg-gray-500 text-white'
 }
 
 const COLUMNS = [

@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { getProject, getBeads, createBead, getBead, createBeadAsync, updateBeadTitle, generateTitle, type Bead, type TransientBead } from '@/lib/api'
 import { useBeadsWatcher } from '@/hooks/useBeadsWatcher'
+import { getPriorityColor } from '@/lib/priority-utils'
 
 type BeadOrTransient = Bead | (TransientBead & { id: string })
 import { Button } from '@/components/ui/button'
@@ -426,7 +427,11 @@ function ProjectComponent() {
                         {bead.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">{bead.priority}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, bead.status)}`}>
+                        P{bead.priority}
+                      </Badge>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
