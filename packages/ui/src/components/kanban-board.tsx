@@ -106,12 +106,14 @@ export function KanbanBoard({ beads, onBeadClick, onRetryGeneration }: KanbanBoa
                     onClick={() => onBeadClick(bead)}
                   >
                     <CardHeader className="p-3 pb-0 space-y-1">
-                      <div className="flex justify-between items-start">
-                        <span className="font-mono text-xs text-muted-foreground font-bold">{bead.id}</span>
-                        <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, col.id)}`}>
-                          P{bead.priority}
-                        </Badge>
-                      </div>
+                      {!isTransient && (
+                        <div className="flex justify-between items-start">
+                          <span className="font-mono text-xs text-muted-foreground font-bold">{bead.id}</span>
+                          <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, col.id)}`}>
+                            P{bead.priority}
+                          </Badge>
+                        </div>
+                      )}
                       {isGenerating && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Loader2 className="h-3 w-3 animate-spin" />
@@ -144,11 +146,13 @@ export function KanbanBoard({ beads, onBeadClick, onRetryGeneration }: KanbanBoa
                           )}
                         </div>
                       )}
-                      <CardTitle className={`text-sm font-semibold leading-tight ${
-                        isGenerating ? 'text-gray-500 italic' : 'text-gray-800'
-                      }`}>
-                        {bead.title}
-                      </CardTitle>
+                      {!isTransient && (
+                        <CardTitle className={`text-sm font-semibold leading-tight ${
+                          isGenerating ? 'text-gray-500 italic' : 'text-gray-800'
+                        }`}>
+                          {bead.title}
+                        </CardTitle>
+                      )}
                     </CardHeader>
                     <CardContent className="p-3 pt-2 text-xs text-gray-600 line-clamp-2">
                       {bead.description || "No description"}
