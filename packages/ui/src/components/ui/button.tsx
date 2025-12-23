@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 ease-out focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-150 ease-out focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 relative overflow-hidden",
   {
     variants: {
       variant: {
@@ -40,14 +40,58 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, children, onClick, ...props }, ref) => {
+    const [ripple, setRipple] = React.useState<React.ReactNode>(null)
+    const internalRef = React.useRef<HTMLButtonElement>(null)
+
+    // Handle refs properly
+    React.useImperativeHandle(ref, () => internalRef.current!)
+    React.useEffect(() => {
+      if (typeof ref === 'function' && internalRef.current) {
+        ref(internalRef.current)
+      }
+    }, [ref])
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!internalRef.current || props.disabled) return
+
+      const button = internalRef.current
+      const rect = button.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+
+      const newRipple = (
+        <span
+          key={Date.now()}
+          className="absolute rounded-full bg-white/30 pointer-events-none animate-ripple"
+          style={{
+            left: x,
+            top: y,
+            width: '100px',
+            height: '100px',
+            marginLeft: '-50px',
+            marginTop: '-50px',
+          }}
+        />
+      )
+
+      setRipple(newRipple)
+      setTimeout(() => setRipple(null), 600)
+
+      onClick?.(e)
+    }
+
     const Comp = asChild ? Slot : "button"
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
+        ref={internalRef}
+        onClick={handleClick}
         {...props}
-      />
+      >
+        {children}
+        {ripple}
+      </Comp>
     )
   }
 )
