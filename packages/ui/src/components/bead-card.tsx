@@ -47,8 +47,8 @@ interface StateConfig {
 
 const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   idle: {
-    bgClass: 'bg-card/80 hover:bg-card/90',
-    borderClass: 'border-border/20',
+    bgClass: 'bg-white dark:bg-card/90 hover:bg-gradient-to-br hover:from-primary/5 hover:to-secondary/5',
+    borderClass: 'border-2 border-border/50 hover:border-primary/30',
     animationClass: 'animate-fade-in-up',
     showId: true,
     showPriority: true,
@@ -56,26 +56,26 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
     icon: null,
   },
   generating: {
-    bgClass: 'bg-card/60 border-dashed opacity-70',
-    borderClass: 'border-border/20',
+    bgClass: 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-dashed opacity-80',
+    borderClass: 'border-2 border-blue-300 dark:border-blue-700',
     animationClass: 'animate-pulse-subtle',
     showId: false,
     showPriority: false,
     showTitle: false,
-    icon: <Loader2 className="h-3 w-3 animate-spin" />,
+    icon: <Loader2 className="h-3 w-3 animate-spin text-blue-500" />,
   },
   generating_plan: {
-    bgClass: 'bg-card/60 border-dashed opacity-70 border-[var(--color-info)]/30',
-    borderClass: 'border-[var(--color-info)]/30',
+    bgClass: 'bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border-2 border-purple-300 dark:border-purple-700 opacity-90',
+    borderClass: 'border-purple-400 dark:border-purple-600',
     animationClass: 'animate-pulse-subtle',
     showId: true,
     showPriority: true,
     showTitle: true,
-    icon: <Loader2 className="h-3 w-3 animate-spin text-[var(--color-info)]" />,
+    icon: <Loader2 className="h-3 w-3 animate-spin text-purple-500" />,
   },
   completed: {
-    bgClass: 'bg-card/90 border-[var(--color-success)]/30',
-    borderClass: 'border-[var(--color-success)]/30',
+    bgClass: 'bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-2',
+    borderClass: 'border-emerald-400 dark:border-emerald-600',
     animationClass: 'animate-fade-in-up',
     showId: false,
     showPriority: false,
@@ -83,8 +83,8 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
     icon: null,
   },
   error: {
-    bgClass: 'bg-destructive/10 border-destructive/30',
-    borderClass: 'border-destructive/30',
+    bgClass: 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-2',
+    borderClass: 'border-red-400 dark:border-red-600',
     animationClass: 'animate-shake',
     showId: false,
     showPriority: false,
@@ -92,8 +92,8 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
     icon: null,
   },
   resolved: {
-    bgClass: 'bg-card/80 hover:bg-card/90',
-    borderClass: 'border-border/20',
+    bgClass: 'bg-white dark:bg-card/90 hover:bg-gradient-to-br hover:from-primary/5 hover:to-secondary/5',
+    borderClass: 'border-2 border-border/50 hover:border-primary/30',
     animationClass: '',
     showId: true,
     showPriority: true,
@@ -103,11 +103,11 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
 }
 
 const TYPE_CONFIGS: Record<string, { label: string; className: string }> = {
-  bug: { label: 'Bug', className: 'bg-destructive/10 text-destructive border-destructive/30' },
-  feature: { label: 'Feature', className: 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/30' },
-  task: { label: 'Task', className: 'bg-[var(--color-info)]/10 text-[var(--color-info)] border-[var(--color-info)]/30' },
-  epic: { label: 'Epic', className: 'bg-[var(--color-secondary)]/10 text-[var(--color-secondary)] border-[var(--color-secondary)]/30' },
-  chore: { label: 'Chore', className: 'bg-muted/50 text-muted-foreground border-border' },
+  bug: { label: 'Bug', className: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30 font-semibold' },
+  feature: { label: 'Feature', className: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 font-semibold' },
+  task: { label: 'Task', className: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30 font-semibold' },
+  epic: { label: 'Epic', className: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 font-semibold' },
+  chore: { label: 'Chore', className: 'bg-gray-500/15 text-gray-600 dark:text-gray-400 border-gray-500/30 font-semibold' },
 }
 
 export function getBeadState(bead: UnifiedBead): BeadState {
@@ -153,7 +153,7 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
   const typeConfig = TYPE_CONFIGS[bead.issue_type] || TYPE_CONFIGS.task
 
   const getStateClasses = () => {
-    const baseClasses = 'cursor-pointer card-state-transition hover:scale-[1.02] hover:shadow-lg hover:shadow-[var(--color-primary)]/10 backdrop-blur-sm border'
+    const baseClasses = 'cursor-pointer card-state-transition rounded-xl hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/15 backdrop-blur-sm transition-all duration-300'
     return `${baseClasses} ${config.bgClass} ${config.borderClass} ${config.animationClass} ${columnCardBorder}`
   }
 

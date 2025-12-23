@@ -63,10 +63,10 @@ function Dashboard() {
   return (
     <>
       <Toaster position="top-right" />
-      <div className="p-8 max-w-6xl mx-auto space-y-10">
+      <div className="min-h-screen p-8 max-w-6xl mx-auto space-y-10 bg-gradient-to-br from-background via-background to-primary/5 background-noise">
       {/* Hero Section */}
-      <div className="flex flex-col gap-3 animate-fade-in-up">
-        <h1 className="text-4xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+      <div className="flex flex-col gap-4 animate-fade-in-up">
+        <h1 className="text-5xl font-bold tracking-tight gradient-text" style={{ fontFamily: 'var(--font-display)' }}>
           Welcome to BeadWork
         </h1>
         <p className="text-muted-foreground text-lg max-w-2xl">
@@ -82,46 +82,50 @@ function Dashboard() {
           if (!open) setShowPicker(false)
         }}>
           <DialogTrigger asChild>
-            <button className="flex flex-col items-center justify-center aspect-video border-2 border-dashed border-primary/30 rounded-xl hover:bg-gradient-to-br hover:from-primary/10 hover:to-secondary/10 transition-all duration-300 gap-4 group hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center group-hover:from-primary/30 group-hover:to-secondary/30 group-hover:scale-110 transition-all duration-300 border border-primary/20">
-                <Plus className="h-6 w-6 text-primary" />
+            <button className="relative flex flex-col items-center justify-center aspect-video rounded-2xl overflow-hidden transition-all duration-500 gap-4 group hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/20 border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-secondary/5 to-primary/5 hover:from-primary/10 hover:via-secondary/10 hover:to-primary/10">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-secondary/0 to-primary/0 group-hover:from-primary/5 group-hover:via-secondary/5 group-hover:to-primary/5 transition-all duration-500"></div>
+              <div className="relative h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <Plus className="h-8 w-8 text-white" />
               </div>
-              <span className="font-medium text-muted-foreground group-hover:text-primary transition-colors">Add Project</span>
+              <span className="relative font-semibold text-base bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Add Project</span>
             </button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>{showPicker ? 'Select Directory' : 'Add Project Repository'}</DialogTitle>
+              <DialogTitle className="text-xl">{showPicker ? 'Select Directory' : 'Add Project Repository'}</DialogTitle>
             </DialogHeader>
             {showPicker ? (
-              <DirectoryPicker 
+              <DirectoryPicker
                 onSelect={(path) => {
                   setNewPath(path)
                   setShowPicker(false)
-                }} 
-                onCancel={() => setShowPicker(false)} 
+                }}
+                onCancel={() => setShowPicker(false)}
               />
             ) : (
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <label htmlFor="path">Project Path</label>
+                  <label htmlFor="path" className="text-sm font-medium">Project Path</label>
                   <div className="flex gap-2">
                     <Input
                       id="path"
                       placeholder="/path/to/repo"
                       value={newPath}
                       onChange={(e) => setNewPath(e.target.value)}
+                      className="flex-1"
                     />
-                    <Button variant="outline" size="icon" onClick={() => setShowPicker(true)}>
+                    <Button variant="outline" size="icon" onClick={() => setShowPicker(true)} className="shrink-0">
                       <FolderOpen className="h-4 w-4" />
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Must contain a .beads directory
                   </p>
-                  {error && <p className="text-sm text-destructive">{error}</p>}
+                  {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>}
                 </div>
-                <Button onClick={handleAdd}>Add Project</Button>
+                <Button onClick={handleAdd} className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg shadow-primary/20">
+                  Add Project
+                </Button>
               </div>
             )}
           </DialogContent>
@@ -133,10 +137,13 @@ function Dashboard() {
       </div>
 
       {projects.length === 0 && (
-        <div className="text-center py-12 animate-fade-in-up delay-200">
-          <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
-          <p className="text-muted-foreground">
-            Initialize a repository with <code className="bg-muted px-1 py-0.5 rounded">beads init</code> then add it here.
+        <div className="text-center py-20 animate-fade-in-up delay-200">
+          <div className="inline-flex h-20 w-20 rounded-2xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-6 shadow-lg">
+            <Folder className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">No projects yet</h3>
+          <p className="text-muted-foreground mb-6">
+            Initialize a repository with <code className="bg-muted px-2 py-1 rounded-md font-mono text-sm border border-border">beads init</code> then add it here.
           </p>
         </div>
       )}
@@ -158,17 +165,25 @@ function ProjectCard({ project }: { project: Project }) {
       params={{ projectId: project.id }}
       className="block"
     >
-      <Card className="aspect-video hover:border-primary/50 transition-all duration-300 cursor-pointer relative overflow-hidden group hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10 bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border-2">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-        <CardHeader className="relative h-full flex flex-col justify-between pb-2">
+      <Card className="aspect-video relative overflow-hidden cursor-pointer group hover:scale-[1.02] transition-all duration-500 border-2 border-border/50 bg-gradient-to-br from-white to-gray-50 dark:from-surface dark:to-surface-elevated shadow-md hover:shadow-2xl hover:shadow-primary/15">
+        {/* Animated gradient background on hover */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-secondary/0 to-primary/0 group-hover:from-primary/10 group-hover:via-secondary/5 group-hover:to-primary/10 transition-all duration-500"></div>
+
+        {/* Decorative pattern overlay */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-secondary/20 to-transparent rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+        </div>
+
+        <CardHeader className="relative h-full flex flex-col justify-between p-5">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center group-hover:from-primary/30 group-hover:to-secondary/30 group-hover:scale-110 transition-all duration-300 border border-primary/10">
-                <Folder className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-3 mb-3">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <Folder className="h-6 w-6 text-white" />
               </div>
-              <span className="truncate font-bold">{project.name}</span>
+              <span className="truncate font-bold text-lg">{project.name}</span>
             </CardTitle>
-            <CardDescription className="truncate font-mono text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded-md mt-2">
+            <CardDescription className="truncate font-mono text-xs text-muted-foreground bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg border border-border/50">
               {project.path}
             </CardDescription>
           </div>
@@ -177,28 +192,28 @@ function ProjectCard({ project }: { project: Project }) {
             {stats ? (
               <div className="flex gap-6">
                 <div className="flex flex-col group-hover:scale-110 transition-transform duration-300 origin-left">
-                  <span className="text-3xl font-bold text-[var(--color-warning)]" style={{ fontFamily: 'var(--font-display)' }}>
+                  <span className="text-4xl font-bold bg-gradient-to-br from-amber-500 to-orange-600 bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-display)' }}>
                     {stats.summary?.open_issues ?? 0}
                   </span>
                   <span className="text-xs text-muted-foreground font-medium">Open</span>
                 </div>
                 <div className="flex flex-col group-hover:scale-110 transition-transform duration-300 delay-75 origin-left">
-                  <span className="text-3xl font-bold text-[var(--color-success)]" style={{ fontFamily: 'var(--font-display)' }}>
+                  <span className="text-4xl font-bold bg-gradient-to-br from-emerald-500 to-green-600 bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-display)' }}>
                     {stats.summary?.closed_issues ?? 0}
                   </span>
                   <span className="text-xs text-muted-foreground font-medium">Closed</span>
                 </div>
               </div>
             ) : (
-              <div className="flex gap-6">
-                <Skeleton variant="shimmer" className="h-8 w-16" />
-                <Skeleton variant="shimmer" className="h-3 w-12" />
+              <div className="flex gap-4">
+                <Skeleton variant="shimmer" className="h-10 w-20 rounded-lg" />
+                <Skeleton variant="shimmer" className="h-10 w-20 rounded-lg" />
               </div>
             )}
 
-            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg glow-primary">
-                <ArrowRight className="h-4 w-4 text-white" />
+            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
+                <ArrowRight className="h-5 w-5 text-white" />
               </div>
             </div>
           </div>

@@ -271,147 +271,155 @@ function ProjectComponent() {
   return (
     <>
       <Toaster position="top-right" />
-      <div className="flex flex-col h-full p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">{project.name}</h1>
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search issues..."
-              className="pl-8 h-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-primary/5">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-border/50 bg-background/50 backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold gradient-text">{project.name}</h1>
+            <div className="relative w-72">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search issues..."
+                className="pl-10 h-10 bg-background/50 border-border/50 focus:bg-background"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <ConnectionStatus status={connectionStatus} />
           </div>
-          <ConnectionStatus status={connectionStatus} />
-        </div>
-        <div className="flex gap-2">
-          <div className="flex border rounded-md p-1 mr-2 bg-muted/20">
-            <Button 
-              variant={viewMode === 'board' ? 'secondary' : 'ghost'} 
-              size="sm" 
-              className="h-8 px-2"
-              onClick={() => setViewMode('board')}
-            >
-              <LayoutTemplate className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
-              size="sm" 
-              className="h-8 px-2"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                New Issue
+          <div className="flex gap-2">
+            <div className="flex border-2 border-border/50 rounded-xl p-1 mr-2 bg-background/50 backdrop-blur-sm">
+              <Button
+                variant={viewMode === 'board' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-9 px-3 rounded-lg"
+                onClick={() => setViewMode('board')}
+              >
+                <LayoutTemplate className="h-4 w-4" />
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Create New Issue</DialogTitle>
-                <VisuallyHidden>
-                  <DialogDescription>
-                    Create a new issue in this project.
-                  </DialogDescription>
-                </VisuallyHidden>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label htmlFor="description" className="text-sm font-medium">Description</label>
-                  <Textarea
-                    id="description"
-                    value={newIssueDescription}
-                    onChange={(e) => setNewIssueDescription(e.target.value)}
-                    placeholder="Describe the issue... AI will automatically generate a title"
-                    className="min-h-[100px]"
-                  />
-                </div>
-                <Button onClick={handleCreate} disabled={isCreating || !newIssueDescription.trim()}>
-                  {isCreating ? 'Creating...' : 'Create'}
+              <Button
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-9 px-3 rounded-lg"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg shadow-primary/20">
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Issue
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-hidden">
-        {viewMode === 'board' ? (
-          <KanbanBoard beads={filteredBeads} onBeadClick={handleBeadClick} onRetry={retryTitleGeneration} />
-        ) : (
-          <div className="border rounded-lg bg-white overflow-hidden flex flex-col h-full">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-24">ID</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead className="w-32">Status</TableHead>
-                  <TableHead className="w-24 text-right">Priority</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredBeads.map((bead) => (
-                  <TableRow 
-                    key={bead.id} 
-                    className="cursor-pointer"
-                    onClick={() => handleBeadClick(bead)}
-                  >
-                    <TableCell className="font-mono text-xs">{bead.id}</TableCell>
-                    <TableCell className="font-medium">{bead.title}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="uppercase text-[10px]">
-                        {bead.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority ?? 2, bead.status)}`}>
-                        P{bead.priority ?? 2}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {filteredBeads.length === 0 && (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground py-12">
-                No issues found
-              </div>
-            )}
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[550px] border-2">
+                <DialogHeader>
+                  <DialogTitle className="text-xl">Create New Issue</DialogTitle>
+                  <VisuallyHidden>
+                    <DialogDescription>
+                      Create a new issue in this project.
+                    </DialogDescription>
+                  </VisuallyHidden>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <label htmlFor="description" className="text-sm font-medium">Description</label>
+                    <Textarea
+                      id="description"
+                      value={newIssueDescription}
+                      onChange={(e) => setNewIssueDescription(e.target.value)}
+                      placeholder="Describe the issue... AI will automatically generate a title"
+                      className="min-h-[120px] resize-none"
+                    />
+                  </div>
+                  <Button onClick={handleCreate} disabled={isCreating || !newIssueDescription.trim()} className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg">
+                    {isCreating ? 'Creating...' : 'Create Issue'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
-        )}
-      </div>
+        </div>
 
-      <IssueSheet
-        bead={selectedBead}
-        projectPath={project.path}
-        isOpen={!!selectedBead}
-        isGeneratingPlan={selectedBead ? isBeadGeneratingPlan(selectedBead.id) : false}
-        onClose={() => setSelectedBead(null)}
-        onPlanGenerationStart={(beadId, transientId) => {
-          setTransientBeads(prev => [...prev, {
-            transientId,
-            realId: beadId,
-            status: 'generating_plan',
-            title: selectedBead?.title || 'Generating plan...',
-            description: selectedBead?.description,
-            issue_type: selectedBead?.issue_type || 'task',
-            priority: selectedBead?.priority,
-            created_at: new Date().toISOString(),
-          }])
-          router.invalidate()
-        }}
-        onPlanGenerationEnd={(beadId) => {
-          setTransientBeads(prev => prev.filter(b => b.realId !== beadId))
-          router.invalidate()
-        }}
-      />
+        {/* Content */}
+        <div className="flex-1 overflow-hidden p-6">
+          {viewMode === 'board' ? (
+            <KanbanBoard beads={filteredBeads} onBeadClick={handleBeadClick} onRetry={retryTitleGeneration} />
+          ) : (
+            <div className="border-2 border-border/50 rounded-2xl bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col h-full shadow-xl">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50 hover:bg-transparent">
+                    <TableHead className="w-24 font-semibold">ID</TableHead>
+                    <TableHead className="font-semibold">Title</TableHead>
+                    <TableHead className="w-32 font-semibold">Status</TableHead>
+                    <TableHead className="w-24 text-right font-semibold">Priority</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredBeads.map((bead) => (
+                    <TableRow
+                      key={bead.id}
+                      className="cursor-pointer hover:bg-primary/5 transition-colors"
+                      onClick={() => handleBeadClick(bead)}
+                    >
+                      <TableCell className="font-mono text-xs">{bead.id}</TableCell>
+                      <TableCell className="font-medium">{bead.title}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="uppercase text-[10px] font-semibold">
+                          {bead.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority ?? 2, bead.status)}`}>
+                          P{bead.priority ?? 2}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {filteredBeads.length === 0 && (
+                <div className="flex-1 flex items-center justify-center text-muted-foreground py-12">
+                  <div className="text-center">
+                    <div className="inline-flex h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
+                      <Search className="h-8 w-8" />
+                    </div>
+                    <p className="text-lg font-medium">No issues found</p>
+                    <p className="text-sm">Try a different search term</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <IssueSheet
+          bead={selectedBead}
+          projectPath={project.path}
+          isOpen={!!selectedBead}
+          isGeneratingPlan={selectedBead ? isBeadGeneratingPlan(selectedBead.id) : false}
+          onClose={() => setSelectedBead(null)}
+          onPlanGenerationStart={(beadId, transientId) => {
+            setTransientBeads(prev => [...prev, {
+              transientId,
+              realId: beadId,
+              status: 'generating_plan',
+              title: selectedBead?.title || 'Generating plan...',
+              description: selectedBead?.description,
+              issue_type: selectedBead?.issue_type || 'task',
+              priority: selectedBead?.priority,
+              created_at: new Date().toISOString(),
+            }])
+            router.invalidate()
+          }}
+          onPlanGenerationEnd={(beadId) => {
+            setTransientBeads(prev => prev.filter(b => b.realId !== beadId))
+            router.invalidate()
+          }}
+        />
       </div>
     </>
   )

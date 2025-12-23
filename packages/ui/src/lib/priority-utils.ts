@@ -18,30 +18,30 @@ export const PRIORITY_LABELS: Record<number, string> = {
 export function getPriorityColor(priority: number, status: string): string {
   const priorityColors: Record<string, Record<number, string>> = {
     open: {
-      0: 'bg-[var(--destructive)] text-destructive-foreground',
-      1: 'bg-[var(--color-warning)] text-foreground',
-      2: 'bg-[var(--color-info)] text-primary-foreground',
-      3: 'bg-[var(--color-success)] text-primary-foreground',
-      4: 'bg-muted text-foreground'
+      0: 'bg-gradient-to-r from-red-600 to-red-500 text-white border-red-400 shadow-lg shadow-red-500/30',
+      1: 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-400 shadow-md shadow-orange-500/30',
+      2: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-blue-400 shadow-md shadow-blue-500/30',
+      3: 'bg-gradient-to-r from-emerald-500 to-green-500 text-white border-emerald-400 shadow-md shadow-emerald-500/30',
+      4: 'bg-gradient-to-r from-gray-400 to-gray-300 text-gray-700 border-gray-300'
     },
     in_progress: {
-      0: 'bg-[var(--destructive)] text-destructive-foreground',
-      1: 'bg-[var(--color-emphasis)] text-primary-foreground',
-      2: 'bg-[var(--color-info)] text-primary-foreground',
-      3: 'bg-primary text-primary-foreground',
-      4: 'bg-muted text-foreground'
+      0: 'bg-gradient-to-r from-red-600 to-red-500 text-white border-red-400 shadow-lg shadow-red-500/30',
+      1: 'bg-gradient-to-r from-purple-500 to-violet-500 text-white border-purple-400 shadow-lg shadow-purple-500/30',
+      2: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-blue-400 shadow-md shadow-blue-500/30',
+      3: 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white border-indigo-400 shadow-md shadow-indigo-500/30',
+      4: 'bg-gradient-to-r from-gray-400 to-gray-300 text-gray-700 border-gray-300'
     },
     done: {
-      0: 'bg-[var(--color-success)] text-primary-foreground',
-      1: 'bg-[var(--color-success)] text-primary-foreground',
-      2: 'bg-[var(--color-success)] text-primary-foreground',
-      3: 'bg-[var(--color-info)] text-primary-foreground',
-      4: 'bg-muted text-foreground'
+      0: 'bg-gradient-to-r from-emerald-600 to-green-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30',
+      1: 'bg-gradient-to-r from-emerald-600 to-green-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30',
+      2: 'bg-gradient-to-r from-emerald-500 to-green-500 text-white border-emerald-400 shadow-md shadow-emerald-500/30',
+      3: 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white border-teal-400 shadow-md shadow-teal-500/30',
+      4: 'bg-gradient-to-r from-gray-400 to-gray-300 text-gray-700 border-gray-300'
     }
   }
 
   const statusColors = priorityColors[status] || priorityColors.open
-  return statusColors[priority] || 'bg-muted text-foreground'
+  return statusColors[priority] || 'bg-gradient-to-r from-gray-400 to-gray-300 text-gray-700 border-gray-300'
 }
 
 /**
