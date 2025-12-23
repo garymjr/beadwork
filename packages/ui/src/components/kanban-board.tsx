@@ -74,13 +74,13 @@ export function KanbanBoard({ beads, onBeadClick, onRetry }: KanbanBoardProps) {
       {COLUMNS.map((col, index) => (
         <div
           key={col.id}
-          className={`flex-1 min-w-[320px] flex flex-col rounded-2xl overflow-hidden backdrop-blur-sm shadow-xl transition-all duration-300 hover:shadow-2xl ${col.bgGradient} ${col.borderColor} relative group`}
+          className={`flex-1 min-w-[320px] flex flex-col rounded-2xl backdrop-blur-sm shadow-xl transition-all duration-300 hover:shadow-2xl ${col.bgGradient} ${col.borderColor} relative group`}
         >
           {/* Decorative gradient blob in background */}
-          <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-current to-transparent opacity-5 rounded-full blur-3xl pointer-events-none group-hover:opacity-10 transition-opacity duration-300" style={{ color: 'inherit' }}></div>
+          <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-current to-transparent opacity-5 rounded-full blur-3xl pointer-events-none group-hover:opacity-10 transition-opacity duration-300 overflow-hidden" style={{ color: 'inherit' }}></div>
 
           {/* Header */}
-          <div className={`p-4 font-bold text-base flex items-center justify-between ${col.headerBg} ${col.headerText} relative z-10`}>
+          <div className={`p-4 font-bold text-base flex items-center justify-between rounded-t-2xl ${col.headerBg} ${col.headerText} relative z-10`}>
             <div className="flex items-center gap-2">
               <span className="text-lg">{col.icon}</span>
               <span>{col.label}</span>

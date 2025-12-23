@@ -187,7 +187,7 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
   const priorityAccent = PRIORITY_ACCENTS[bead.priority] || PRIORITY_ACCENTS[2]
 
   const getStateClasses = () => {
-    const baseClasses = 'cursor-pointer transition-all duration-300 ease-out rounded-xl overflow-hidden relative shadow-md hover:shadow-xl group'
+    const baseClasses = 'cursor-pointer transition-all duration-300 ease-out rounded-xl relative shadow-md hover:shadow-xl group'
     return `${baseClasses} ${config.bgClass} ${config.borderClass} ${config.animationClass}`
   }
 
@@ -202,19 +202,19 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
       data-priority={bead.priority}
     >
       {/* Priority-colored side accent */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${priorityAccent.color}`}></div>
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl overflow-hidden ${priorityAccent.color}`}></div>
 
       {/* Gradient background overlay on hover */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${priorityAccent.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none`}></div>
+      <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${priorityAccent.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300 pointer-events-none`}></div>
 
       {/* Border glow on hover */}
-      <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${priorityAccent.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-sm -z-10`}></div>
+      <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${priorityAccent.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-md -z-10`}></div>
 
       {/* Type-based gradient accent in top right */}
-      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${typeConfig.gradient} opacity-10 rounded-bl-full transition-opacity duration-300 group-hover:opacity-20`}></div>
+      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${typeConfig.gradient} opacity-10 rounded-bl-full transition-opacity duration-300 group-hover:opacity-20 overflow-hidden`}></div>
 
       {/* Main content */}
-      <div className="relative z-10">
+      <div className="relative z-10 rounded-xl overflow-hidden">
         <div className="p-4 pb-0 space-y-3">
           {config.showId && (
             <div className="flex justify-between items-start gap-2">
