@@ -45,7 +45,6 @@ function ProjectComponent() {
   const { project, beads } = Route.useLoaderData()
   const router = useRouter()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [newIssueTitle, setNewIssueTitle] = useState('')
   const [newIssueDescription, setNewIssueDescription] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [selectedBead, setSelectedBead] = useState<Bead | null>(null)
@@ -210,42 +209,20 @@ function ProjectComponent() {
   }
 
   const handleCreate = async () => {
-    if (!newIssueTitle.trim() && !newIssueDescription.trim()) return
+    if (!newIssueDescription.trim()) return
     setIsCreating(true)
-    
-    const isTransient = !newIssueTitle.trim() && newIssueDescription.trim()
-    
-    // Clear form immediately
-    setNewIssueTitle('')
+
+    const description = newIssueDescription
+
+    // Clear form and close dialog immediately
     setNewIssueDescription('')
-    
-    // Close dialog immediately for transient beads, wait for regular beads
-    if (isTransient) {
-      setIsCreateOpen(false)
-    }
-    
+    setIsCreateOpen(false)
+
     try {
-      if (newIssueTitle.trim()) {
-        // If title is provided, create normally
-        await createBead({ 
-          projectPath: project.path, 
-          title: newIssueTitle, 
-          description: newIssueDescription || undefined 
-        })
-        // Close dialog after successful regular bead creation
-        setIsCreateOpen(false)
-        router.invalidate()
-      } else if (newIssueDescription.trim()) {
-        // If only description is provided, create transient bead
-        // Dialog already closed, just start the creation process
-        createTransientBead(newIssueDescription).catch(console.error)
-      }
+      // Always create transient bead (AI generates title)
+      createTransientBead(description).catch(console.error)
     } catch (e) {
       console.error(e)
-      // Close dialog on error for regular beads
-      if (!isTransient) {
-        setIsCreateOpen(false)
-      }
     } finally {
       setIsCreating(false)
     }
@@ -315,25 +292,16 @@ function ProjectComponent() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <label htmlFor="title" className="text-sm font-medium">Title (optional if description provided)</label>
-                  <Input
-                    id="title"
-                    value={newIssueTitle}
-                    onChange={(e) => setNewIssueTitle(e.target.value)}
-                    placeholder="Issue title..."
-                  />
-                </div>
-                <div className="grid gap-2">
                   <label htmlFor="description" className="text-sm font-medium">Description</label>
                   <Textarea
                     id="description"
                     value={newIssueDescription}
                     onChange={(e) => setNewIssueDescription(e.target.value)}
-                    placeholder="Describe the issue... (AI will generate title if left blank)"
+                    placeholder="Describe the issue... AI will automatically generate a title"
                     className="min-h-[100px]"
                   />
                 </div>
-                <Button onClick={handleCreate} disabled={isCreating || (!newIssueTitle.trim() && !newIssueDescription.trim())}>
+                <Button onClick={handleCreate} disabled={isCreating || !newIssueDescription.trim()}>
                   {isCreating ? 'Creating...' : 'Create'}
                 </Button>
               </div>
