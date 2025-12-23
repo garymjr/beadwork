@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { getProjects, addProject, getProjectStats, type Project } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card3D } from '@/components/ui/card-3d'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/components/ui/sonner'
+import { Toaster } from '@/components/ui/sonner'
 import { Folder, Plus, ArrowRight, FolderOpen } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -28,6 +32,7 @@ function Dashboard() {
   const handleAdd = async () => {
     try {
       await addProject(newPath)
+      toast.success(`Project ${newPath} added successfully`)
       setIsAddOpen(false)
       setNewPath('')
       setError('')
@@ -37,6 +42,7 @@ function Dashboard() {
         if (confirm('Project needs initialization. Initialize beads?')) {
           try {
             await addProject(newPath, true)
+            toast.success(`Project ${newPath} initialized and added`)
             setIsAddOpen(false)
             setNewPath('')
             setError('')
@@ -44,16 +50,20 @@ function Dashboard() {
             return
           } catch (initErr: any) {
             setError(initErr.message)
+            toast.error('Failed to initialize project')
             return
           }
         }
       }
       setError((e as Error).message)
+      toast.error('Failed to add project')
     }
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-10">
+    <>
+      <Toaster position="top-right" />
+      <div className="p-8 max-w-6xl mx-auto space-y-10">
       {/* Hero Section */}
       <div className="flex flex-col gap-3 animate-fade-in-up">
         <h1 className="text-4xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
@@ -130,7 +140,8 @@ function Dashboard() {
           </p>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
 
@@ -142,8 +153,8 @@ function ProjectCard({ project }: { project: Project }) {
   }, [project.path])
 
   return (
-    <Link 
-      to="/project/$projectId" 
+    <Link
+      to="/project/$projectId"
       params={{ projectId: project.id }}
       className="block"
     >
@@ -161,7 +172,7 @@ function ProjectCard({ project }: { project: Project }) {
               {project.path}
             </CardDescription>
           </div>
-          
+
           <div className="flex items-center justify-between">
             {stats ? (
               <div className="flex gap-6">
@@ -179,12 +190,12 @@ function ProjectCard({ project }: { project: Project }) {
                 </div>
               </div>
             ) : (
-              <div className="animate-pulse space-y-2">
-                <div className="h-8 w-16 bg-gradient-to-r from-muted/50 to-muted rounded-lg skeleton"></div>
-                <div className="h-3 w-12 bg-gradient-to-r from-muted/30 to-muted/50 rounded skeleton"></div>
+              <div className="flex gap-6">
+                <Skeleton variant="shimmer" className="h-8 w-16" />
+                <Skeleton variant="shimmer" className="h-3 w-12" />
               </div>
             )}
-            
+
             <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg glow-primary">
                 <ArrowRight className="h-4 w-4 text-white" />

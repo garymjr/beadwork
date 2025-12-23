@@ -7,6 +7,8 @@ type BeadOrTransient = Bead | (TransientBead & { id: string })
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { ConnectionStatus } from '@/components/ui/connection-status'
+import { toast, Toaster } from '@/components/ui/sonner'
 import {
   Dialog,
   DialogContent,
@@ -30,7 +32,6 @@ import {
   TableRow 
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Wifi, WifiOff, Loader2 } from 'lucide-react'
 
 export const Route = createFileRoute('/project/$projectId')({
   loader: async ({ params }) => {
@@ -63,12 +64,6 @@ function ProjectComponent() {
       router.invalidate()
     },
   })
-
-  const connectionStatusIcon = {
-    connected: <Wifi className="h-4 w-4 text-green-500" />,
-    connecting: <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />,
-    disconnected: <WifiOff className="h-4 w-4 text-red-500" />,
-  }[connectionStatus]
 
   const allBeads = useMemo(() => {
     // Create a map of transient beads by their real ID (if available) or transient ID
@@ -112,60 +107,63 @@ function ProjectComponent() {
   const retryTitleGeneration = async (bead: BeadOrTransient) => {
     const realId = 'transientId' in bead ? (bead as any).realId : bead.id
     if (!realId) return
-    
+
     const transientBead = transientBeads.find(b => (b as any).realId === realId)
     if (!transientBead) return
-    
+
     // Update status to generating
-    setTransientBeads(prev => prev.map(b => 
-      (b as any).realId === realId 
+    setTransientBeads(prev => prev.map(b =>
+      (b as any).realId === realId
         ? { ...b, status: 'generating', error: undefined, retryCount: (b.retryCount || 0) + 1 }
         : b
     ))
-    
+
     try {
       const title = await generateTitle(
         transientBead.description!,
         project.path
       )
-      
+
       // Update the real bead with the generated title
       await updateBeadTitle(
         project.path,
         realId,
         title
       )
-      
+
       // Update transient to completed state - smooth transition
-      setTransientBeads(prev => prev.map(b => 
-        (b as any).realId === realId 
+      setTransientBeads(prev => prev.map(b =>
+        (b as any).realId === realId
           ? { ...b, title, status: 'completed' }
           : b
       ))
-      
+
+      toast.success(`Title generated for ${realId}`)
+
       // Remove transient state after short delay
       setTimeout(() => {
         setTransientBeads(prev => prev.filter(b => (b as any).realId !== realId))
       }, 500)
     } catch (error) {
-      setTransientBeads(prev => prev.map(b => 
-        (b as any).realId === realId 
+      setTransientBeads(prev => prev.map(b =>
+        (b as any).realId === realId
           ? { ...b, status: 'error', error: (error as Error).message }
           : b
       ))
+      toast.error(`Failed to generate title for ${realId}`)
     }
   }
 
   const createTransientBead = async (description: string, type?: string, priority?: number) => {
     try {
       // Create the bead immediately with placeholder title - gets real ID
-      const createdBead = await createBeadAsync({ 
-        projectPath: project.path, 
+      const createdBead = await createBeadAsync({
+        projectPath: project.path,
         description,
         type: type || 'task',
         priority: priority || 2,
       })
-      
+
       // Add transient state tracking for the real bead ID
       const transientId = crypto.randomUUID()
       const transientBead: TransientBead = {
@@ -178,50 +176,54 @@ function ProjectComponent() {
         priority: priority || 2,
         created_at: new Date().toISOString(),
       }
-      
+
       setTransientBeads(prev => [...prev, transientBead])
-      
+
       // Invalidate to show the bead in the UI with generating state
       router.invalidate()
-      
+
       // Generate title in background
       try {
         const title = await generateTitle(
           description,
           project.path
         )
-        
+
         // Update the real bead with the generated title
         await updateBeadTitle(
           project.path,
           createdBead.id,
           title
         )
-        
+
         // Update transient to completed state - card transitions smoothly in place
-        setTransientBeads(prev => prev.map(b => 
-          b.realId === createdBead.id 
+        setTransientBeads(prev => prev.map(b =>
+          b.realId === createdBead.id
             ? { ...b, title, status: 'completed' }
             : b
         ))
-        
+
+        toast.success(`Issue ${createdBead.id} created with AI-generated title`)
+
         // Remove transient state after short delay
         setTimeout(() => {
           setTransientBeads(prev => prev.filter(b => b.realId !== createdBead.id))
         }, 500)
-        
+
         return { transientId, realId: createdBead.id, title }
       } catch (error) {
         // Update transient to error state
-        setTransientBeads(prev => prev.map(b => 
-          b.realId === createdBead.id 
+        setTransientBeads(prev => prev.map(b =>
+          b.realId === createdBead.id
             ? { ...b, status: 'error', error: (error as Error).message }
             : b
         ))
+        toast.error(`Failed to generate title for ${createdBead.id}`)
         throw error
       }
     } catch (error) {
       // If bead creation fails, show error in dialog
+      toast.error('Failed to create issue')
       throw error
     }
   }
@@ -267,7 +269,9 @@ function ProjectComponent() {
   }
 
   return (
-    <div className="flex flex-col h-full p-6">
+    <>
+      <Toaster position="top-right" />
+      <div className="flex flex-col h-full p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold">{project.name}</h1>
@@ -280,10 +284,7 @@ function ProjectComponent() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {connectionStatusIcon}
-            <span className="capitalize">{connectionStatus}</span>
-          </div>
+          <ConnectionStatus status={connectionStatus} />
         </div>
         <div className="flex gap-2">
           <div className="flex border rounded-md p-1 mr-2 bg-muted/20">
@@ -411,6 +412,7 @@ function ProjectComponent() {
           router.invalidate()
         }}
       />
-    </div>
+      </div>
+    </>
   )
 }

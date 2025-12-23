@@ -9,15 +9,16 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { toast } from '@/components/ui/sonner'
 import { Loader2, Trash2, MessageSquare, Link as LinkIcon, Plus, X, Sparkles, Copy, Circle, CircleDot, CircleDashed, CheckCircle2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { 
-  updateBead, 
-  deleteBead, 
-  getComments, 
-  addComment, 
-  getDependencies, 
-  addDependency, 
+import {
+  updateBead,
+  deleteBead,
+  getComments,
+  addComment,
+  getDependencies,
+  addDependency,
   removeDependency,
   createPlan,
   type Bead,
@@ -97,9 +98,11 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
         priority: String(formData.priority)
       })
       router.invalidate()
+      toast.success(`Issue ${bead.id} updated successfully`)
       onClose()
     } catch (e) {
       console.error(e)
+      toast.error('Failed to save changes')
     } finally {
       setLoading(false)
     }
@@ -108,14 +111,14 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
   const handleCreatePlan = async () => {
     if (!bead || !formData.description) return
     setIsCreatingPlan(true)
-    
+
     const transientId = crypto.randomUUID()
-    
+
     try {
       if (onPlanGenerationStart) {
         onPlanGenerationStart(bead.id, transientId)
       }
-      
+
       await createPlan({
         projectPath,
         id: bead.id,
@@ -123,12 +126,14 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
         description: formData.description,
         issue_type: bead.issue_type
       })
-      
+
       await fetchComments()
       await fetchDependencies()
       router.invalidate()
+      toast.success(`Plan generated for ${bead.id}`)
     } catch (e) {
       console.error(e)
+      toast.error('Failed to generate plan')
     } finally {
       setIsCreatingPlan(false)
       if (onPlanGenerationEnd) {
@@ -143,9 +148,11 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
     try {
       await deleteBead(projectPath, bead.id)
       router.invalidate()
+      toast.success(`Issue ${bead.id} deleted`)
       onClose()
     } catch (e) {
       console.error(e)
+      toast.error('Failed to delete issue')
     } finally {
       setLoading(false)
     }
@@ -158,8 +165,10 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
       await addComment(projectPath, bead.id, newComment)
       setNewComment('')
       await fetchComments()
+      toast.success('Comment added')
     } catch (e) {
       console.error(e)
+      toast.error('Failed to add comment')
     } finally {
       setLoading(false)
     }
@@ -173,8 +182,10 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
       setNewDepId('')
       await fetchDependencies()
       router.invalidate()
+      toast.success(`Dependency ${newDepId} added`)
     } catch (e) {
       console.error(e)
+      toast.error('Failed to add dependency')
     } finally {
       setLoading(false)
     }
@@ -187,8 +198,10 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
       await removeDependency(projectPath, bead.id, depId)
       await fetchDependencies()
       router.invalidate()
+      toast.success(`Dependency ${depId} removed`)
     } catch (e) {
       console.error(e)
+      toast.error('Failed to remove dependency')
     } finally {
       setLoading(false)
     }
@@ -199,9 +212,11 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
     try {
       await navigator.clipboard.writeText(bead.id)
       setCopiedId(bead.id)
+      toast.success(`ID ${bead.id} copied to clipboard`)
       setTimeout(() => setCopiedId(null), 2000)
     } catch (e) {
       console.error(e)
+      toast.error('Failed to copy ID')
     }
   }
 
