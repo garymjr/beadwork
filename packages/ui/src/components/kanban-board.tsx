@@ -12,26 +12,29 @@ const COLUMNS = [
   {
     id: 'open',
     label: 'Open',
-    bgGradient: 'from-[var(--color-warning)]/20 to-[var(--color-highlight)]/20',
-    borderColor: 'border-[var(--color-warning)]/50',
-    headerBg: 'bg-gradient-to-r from-[var(--color-warning)] to-[var(--color-highlight)]',
-    cardBorder: 'hover:border-[var(--color-warning)]/70',
+    bgGradient: 'from-[var(--color-warning)]/10 to-transparent',
+    bgTint: 'bg-[var(--color-warning)]/5',
+    borderColor: 'border-[var(--color-warning)]/30',
+    headerBg: 'bg-gradient-to-r from-[var(--color-warning)]/80 to-[var(--color-warning)]/60',
+    cardBorder: 'hover:border-[var(--color-warning)]/50',
   },
   {
     id: 'in_progress',
     label: 'In Progress',
-    bgGradient: 'from-[var(--color-info)]/20 to-primary/20',
-    borderColor: 'border-[var(--color-info)]/50',
-    headerBg: 'bg-gradient-to-r from-[var(--color-info)] to-primary',
-    cardBorder: 'hover:border-[var(--color-info)]/70',
+    bgGradient: 'from-[var(--color-info)]/10 to-transparent',
+    bgTint: 'bg-[var(--color-info)]/5',
+    borderColor: 'border-[var(--color-info)]/30',
+    headerBg: 'bg-gradient-to-r from-[var(--color-info)]/80 to-primary/60',
+    cardBorder: 'hover:border-[var(--color-info)]/50',
   },
   {
     id: 'done',
     label: 'Done',
-    bgGradient: 'from-[var(--color-success)]/20 to-emerald-400/20',
-    borderColor: 'border-[var(--color-success)]/50',
-    headerBg: 'bg-gradient-to-r from-[var(--color-success)] to-emerald-500',
-    cardBorder: 'hover:border-[var(--color-success)]/70',
+    bgGradient: 'from-[var(--color-success)]/10 to-transparent',
+    bgTint: 'bg-[var(--color-success)]/5',
+    borderColor: 'border-[var(--color-success)]/30',
+    headerBg: 'bg-gradient-to-r from-[var(--color-success)]/80 to-[var(--color-success)]/60',
+    cardBorder: 'hover:border-[var(--color-success)]/50',
   },
 ]
 
@@ -68,15 +71,18 @@ export function KanbanBoard({ beads, onBeadClick, onRetry }: KanbanBoardProps) {
 
   return (
     <div className="flex h-full gap-4 overflow-x-auto pb-4">
-      {COLUMNS.map(col => (
-        <div key={col.id} className={`flex-1 min-w-[200px] flex flex-col rounded-lg border-2 ${col.bgGradient} ${col.borderColor} backdrop-blur-sm shadow-lg`}>
-          <div className={`p-3 font-bold text-sm text-primary-foreground flex items-center justify-between ${col.headerBg} shadow-md`}>
+      {COLUMNS.map((col, index) => (
+        <div 
+          key={col.id} 
+          className={`flex-1 min-w-[200px] flex flex-col rounded-lg border ${col.bgGradient} ${col.bgTint} ${col.borderColor} backdrop-blur-sm shadow-lg transition-all duration-200`}
+        >
+          <div className={`p-3 font-semibold text-sm text-primary-foreground flex items-center justify-between ${col.headerBg} rounded-t-lg shadow-sm`}>
             {col.label}
-            <Badge variant="secondary" className="text-xs bg-card/20 text-primary-foreground border-border/30">
+            <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1.5 flex items-center justify-center text-xs bg-card/20 text-primary-foreground border-border/30">
               {getColumnBeads(col.id).length}
             </Badge>
           </div>
-          <ScrollArea className="flex-1 p-2">
+          <ScrollArea className="flex-1 p-2 custom-scrollbar">
             <div className="space-y-2">
               {getColumnBeads(col.id).map(bead => (
                 <BeadCard

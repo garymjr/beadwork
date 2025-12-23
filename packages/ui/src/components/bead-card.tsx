@@ -49,7 +49,7 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   idle: {
     bgClass: 'bg-card/80 hover:bg-card/90',
     borderClass: 'border-border/20',
-    animationClass: 'animate-slide-in',
+    animationClass: 'animate-fade-in-up',
     showId: true,
     showPriority: true,
     showTitle: true,
@@ -76,7 +76,7 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
   completed: {
     bgClass: 'bg-card/90 border-[var(--color-success)]/30',
     borderClass: 'border-[var(--color-success)]/30',
-    animationClass: 'animate-fade-in card-success-enter',
+    animationClass: 'animate-fade-in-up',
     showId: false,
     showPriority: false,
     showTitle: true,
@@ -100,6 +100,14 @@ const STATE_CONFIGS: Record<BeadState, StateConfig> = {
     showTitle: true,
     icon: null,
   },
+}
+
+const TYPE_CONFIGS: Record<string, { label: string; className: string }> = {
+  bug: { label: 'Bug', className: 'bg-destructive/10 text-destructive border-destructive/30' },
+  feature: { label: 'Feature', className: 'bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/30' },
+  task: { label: 'Task', className: 'bg-[var(--color-info)]/10 text-[var(--color-info)] border-[var(--color-info)]/30' },
+  epic: { label: 'Epic', className: 'bg-[var(--color-secondary)]/10 text-[var(--color-secondary)] border-[var(--color-secondary)]/30' },
+  chore: { label: 'Chore', className: 'bg-muted/50 text-muted-foreground border-border' },
 }
 
 export function getBeadState(bead: UnifiedBead): BeadState {
@@ -142,9 +150,10 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
   const state = getBeadState(bead)
   const isTransientBead = isTransient(bead)
   const config = STATE_CONFIGS[state]
+  const typeConfig = TYPE_CONFIGS[bead.issue_type] || TYPE_CONFIGS.task
 
   const getStateClasses = () => {
-    const baseClasses = 'cursor-pointer card-state-transition hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm border'
+    const baseClasses = 'cursor-pointer card-state-transition hover:scale-[1.02] hover:shadow-lg hover:shadow-[var(--color-primary)]/10 backdrop-blur-sm border'
     return `${baseClasses} ${config.bgClass} ${config.borderClass} ${config.animationClass} ${columnCardBorder}`
   }
 
@@ -156,16 +165,20 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
     <Card 
       className={getStateClasses()}
       onClick={onClick}
+      data-priority={bead.priority}
     >
-      <CardHeader className="p-3 pb-0 space-y-1">
+      <CardHeader className="p-3 pb-0 space-y-2">
         {config.showId && (
           <div className="flex justify-between items-start">
             <span className="font-mono text-xs text-muted-foreground font-bold">{bead.id}</span>
-            {config.showPriority && (
+            <div className="flex items-center gap-1">
               <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, bead.status)}`}>
                 P{bead.priority}
               </Badge>
-            )}
+              <Badge variant="outline" className={`text-[10px] px-2 py-0 font-medium ${typeConfig.className}`}>
+                {typeConfig.label}
+              </Badge>
+            </div>
           </div>
         )}
         
@@ -173,6 +186,9 @@ export function BeadCard({ bead, onClick, onRetry, columnCardBorder }: BeadCardP
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {config.icon}
             Generating title...
+            <div className="flex-1 h-1 bg-border rounded overflow-hidden">
+              <div className="h-full bg-primary/50 animate-pulse w-2/3 skeleton"></div>
+            </div>
           </div>
         )}
         

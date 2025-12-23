@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Loader2, Trash2, MessageSquare, Link as LinkIcon, Plus, X, Sparkles, Copy } from 'lucide-react'
+import { Loader2, Trash2, MessageSquare, Link as LinkIcon, Plus, X, Sparkles, Copy, Circle, CircleDot, CircleDashed, CheckCircle2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { 
   updateBead, 
@@ -35,6 +35,13 @@ interface IssueSheetProps {
   isGeneratingPlan?: boolean
   onPlanGenerationStart?: (beadId: string, transientId: string) => void
   onPlanGenerationEnd?: (beadId: string) => void
+}
+
+const STATUS_ICONS: Record<string, React.ReactNode> = {
+  open: <Circle className="h-4 w-4" />,
+  in_progress: <CircleDot className="h-4 w-4" />,
+  done: <CheckCircle2 className="h-4 w-4" />,
+  closed: <CircleDashed className="h-4 w-4" />,
 }
 
 export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPlan, onPlanGenerationStart, onPlanGenerationEnd }: IssueSheetProps) {
@@ -202,7 +209,10 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent hideClose className="w-full sm:max-w-[800px] flex flex-col h-full">
+      <SheetContent 
+        hideClose 
+        className="w-full sm:max-w-[800px] flex flex-col h-full backdrop-blur-md"
+      >
         <VisuallyHidden>
           <SheetTitle>Issue Details: {bead.id}</SheetTitle>
           <SheetDescription>View and edit details for issue {bead.id}</SheetDescription>
@@ -210,7 +220,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
         <SheetHeader className="mb-4 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Badge variant="outline">{bead.id}</Badge>
+              <Badge variant="outline" className="font-mono text-xs">{bead.id}</Badge>
               <Button
                 variant="ghost"
                 size="icon"
@@ -237,18 +247,18 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
             <TabsTrigger value="comments" className="flex items-center gap-2">
               Comments
               {comments?.length > 0 && (
-                <Badge variant="secondary" className="px-1 py-0 text-[10px]">{comments.length}</Badge>
+                <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1.5 flex items-center justify-center text-[10px]">{comments.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="dependencies" className="flex items-center gap-2">
               Dependencies
               {dependencies?.length > 0 && (
-                <Badge variant="secondary" className="px-1 py-0 text-[10px]">{dependencies.length}</Badge>
+                <Badge variant="secondary" className="h-5 min-w-5 rounded-full px-1.5 flex items-center justify-center text-[10px]">{dependencies.length}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
             <TabsContent value="details" className="mt-0 space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -257,14 +267,35 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
                     value={formData.status} 
                     onValueChange={(val) => setFormData(prev => ({ ...prev, status: val }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="gap-2">
+                      {STATUS_ICONS[formData.status || 'open']}
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="done">Done</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
+                      <SelectItem value="open">
+                        <span className="flex items-center gap-2">
+                          <Circle className="h-4 w-4" />
+                          Open
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="in_progress">
+                        <span className="flex items-center gap-2">
+                          <CircleDot className="h-4 w-4 text-[var(--color-info)]" />
+                          In Progress
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="done">
+                        <span className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-[var(--color-success)]" />
+                          Done
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="closed">
+                        <span className="flex items-center gap-2">
+                          <CircleDashed className="h-4 w-4" />
+                          Closed
+                        </span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -274,6 +305,8 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
                   <div className="flex gap-2">
                     <Input 
                       type="number"
+                      min="0"
+                      max="4"
                       value={formData.priority || ''}
                       onChange={(e) => setFormData(prev => ({ ...prev, priority: Number(e.target.value) }))}
                     />
@@ -298,7 +331,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
             </TabsContent>
 
             <TabsContent value="comments" className="mt-0 flex flex-col h-full space-y-4">
-              <ScrollArea className="flex-1 border rounded-md p-4 bg-muted/50">
+              <ScrollArea className="flex-1 border rounded-md p-4 bg-muted/50 custom-scrollbar">
                 {comments?.length === 0 || !comments ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <MessageSquare className="mx-auto h-8 w-8 mb-2 opacity-20" />
@@ -307,7 +340,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
                 ) : (
                   <div className="space-y-4">
                     {comments?.map((comment) => (
-                      <div key={comment.id} className="flex gap-3">
+                      <div key={comment.id} className="flex gap-3 animate-fade-in-up">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="text-[10px]">
                             {comment.author.substring(0, 2).toUpperCase()}
@@ -365,7 +398,7 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
                 ) : (
                   <div className="divide-y">
                     {dependencies?.map((dep) => (
-                      <div key={dep.id} className="flex items-center justify-between p-3 bg-card">
+                      <div key={dep.id} className="flex items-center justify-between p-3 bg-card hover:bg-muted/30 transition-colors">
                         <div className="flex items-center gap-3">
                           <Badge variant="outline" className="font-mono text-[10px]">{dep.id}</Badge>
                           <div className="flex flex-col">
@@ -392,13 +425,12 @@ export function IssueSheet({ bead, projectPath, isOpen, onClose, isGeneratingPla
 
         <SheetFooter className="mt-4 pt-4 border-t shrink-0">
           <Button 
-            variant="secondary" 
             onClick={handleCreatePlan} 
             disabled={isCreatingPlan || !formData.description}
-            className="mr-auto"
+            className="mr-auto bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 glow-primary"
           >
             {isCreatingPlan ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            Create Plan
+            Generate Plan
           </Button>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={loading}>

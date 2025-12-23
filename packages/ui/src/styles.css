@@ -331,6 +331,15 @@
       transform var(--duration-base) var(--ease-out);
   }
 
+  /* Card State Transition */
+  .card-state-transition {
+    transition: 
+      transform var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out),
+      background-color var(--duration-base) var(--ease-out),
+      border-color var(--duration-base) var(--ease-out);
+  }
+
   /* Pulse Animation */
   .animate-pulse-subtle {
     animation: pulse-subtle 2s ease-in-out infinite;
@@ -427,6 +436,24 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--color-foreground-muted));
+}
+
+/* Custom Scrollbar for specific components */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--color-border) / 0.5);
+  border-radius: var(--radius-sm);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--color-border) / 0.8);
 }
 
 /* Bead Card Priority Colors */

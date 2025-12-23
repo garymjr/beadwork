@@ -15,6 +15,7 @@
     "test": "bun run --filter @beadwork/ui test"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
     "concurrently": "^9.2.1",
     "typescript": "^5.7.2"
   }

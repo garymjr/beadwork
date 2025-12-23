@@ -24,12 +24,14 @@ export function ProjectSidebar({ projects }: { projects: Project[] }) {
   const [path, setPath] = useState('')
   const [error, setError] = useState('')
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [isThemeRotating, setIsThemeRotating] = useState(false)
 
   useEffect(() => {
     setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light')
   }, [])
 
   const toggleTheme = () => {
+    setIsThemeRotating(true)
     const newTheme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
     if (newTheme === 'dark') {
@@ -39,6 +41,7 @@ export function ProjectSidebar({ projects }: { projects: Project[] }) {
       document.documentElement.classList.remove('dark')
       localStorage.setItem('theme', 'light')
     }
+    setTimeout(() => setIsThemeRotating(false), 300)
   }
 
   const handleAdd = async () => {
@@ -149,8 +152,17 @@ export function ProjectSidebar({ projects }: { projects: Project[] }) {
 
       <div className="mt-auto pt-4 border-t flex justify-between items-center">
         <span className="text-xs text-muted-foreground font-mono">v0.1.0</span>
-        <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-8 w-8">
-          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleTheme} 
+          className="h-8 w-8"
+        >
+          <span 
+            className={`transition-transform duration-300 ${isThemeRotating ? 'rotate-180' : ''}`}
+          >
+            {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </span>
         </Button>
       </div>
     </div>
@@ -174,7 +186,11 @@ function ProjectItem({
     <Link
       to={`/project/$projectId`}
       params={{ projectId: project.id }}
-      className="group relative flex items-center justify-between px-3 py-2 rounded-md hover:bg-muted text-sm [&.active]:bg-primary [&.active]:text-primary-foreground"
+      className="group relative flex items-center justify-between px-3 py-2 rounded-md text-sm card-state-transition [&.active]:bg-primary/10 [&.active]:text-primary hover:shadow-md hover:bg-muted/50 [&.active]:border-l-4 [&.active]:border-l-primary"
+      style={{
+        borderLeft: '3px solid transparent',
+        borderImage: 'linear-gradient(to bottom, hsl(var(--color-primary)), hsl(var(--color-secondary))) 1'
+      }}
     >
       <div className="flex items-center gap-2 truncate pr-6">
         <Folder className="h-4 w-4 shrink-0" />
@@ -183,7 +199,7 @@ function ProjectItem({
       
       <div className="flex items-center gap-2">
         {stats?.summary?.open_issues > 0 && (
-          <Badge variant="secondary" className="px-1 py-0 text-[10px] bg-zinc-200 group-[.active]:bg-primary-foreground group-[.active]:text-primary">
+          <Badge variant="secondary" className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px] font-bold bg-zinc-200 group-[.active]:bg-primary/20 group-[.active]:text-primary">
             {stats.summary.open_issues}
           </Badge>
         )}
