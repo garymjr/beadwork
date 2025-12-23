@@ -1,11 +1,7 @@
 import { type Bead, type TransientBead } from '@/lib/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Loader2, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-
-type BeadOrTransient = Bead | (TransientBead & { id: string })
+import { Badge } from '@/components/ui/badge'
+import { BeadCard, type UnifiedBead, type BeadOrTransient } from '@/components/bead-card'
 
 interface KanbanBoardProps {
   beads: BeadOrTransient[]
@@ -17,7 +13,7 @@ const getPriorityColor = (priority: number | undefined, status: string) => {
   const priorityColors: Record<string, Record<number, string>> = {
     open: {
       0: 'bg-red-500 text-white',
-      1: 'bg-orange-500 text-white', 
+      1: 'bg-orange-500 text-white',
       2: 'bg-yellow-500 text-black',
       3: 'bg-blue-500 text-white',
       4: 'bg-gray-500 text-white'
@@ -25,7 +21,7 @@ const getPriorityColor = (priority: number | undefined, status: string) => {
     in_progress: {
       0: 'bg-red-600 text-white',
       1: 'bg-purple-600 text-white',
-      2: 'bg-blue-600 text-white', 
+      2: 'bg-blue-600 text-white',
       3: 'bg-indigo-500 text-white',
       4: 'bg-gray-600 text-white'
     },
@@ -33,7 +29,7 @@ const getPriorityColor = (priority: number | undefined, status: string) => {
       0: 'bg-green-700 text-white',
       1: 'bg-green-600 text-white',
       2: 'bg-emerald-600 text-white',
-      3: 'bg-teal-600 text-white', 
+      3: 'bg-teal-600 text-white',
       4: 'bg-gray-600 text-white'
     }
   }
@@ -91,73 +87,41 @@ export function KanbanBoard({ beads, onBeadClick, onRetryGeneration }: KanbanBoa
               {getColumnBeads(col.id).map(bead => {
                 const isTransient = 'transientId' in bead
                 const transientBead = isTransient ? bead as any : null
-                const isGenerating = transientBead?.transientStatus === 'generating'
-                const hasError = transientBead?.transientStatus === 'error'
-                const isCompleted = transientBead?.transientStatus === 'completed'
+                
+                // Convert to UnifiedBead format
+                const unifiedBead: UnifiedBead = isTransient ? {
+                  id: bead.id,
+                  transientId: transientBead.transientId,
+                  title: bead.title,
+                  description: bead.description || '',
+                  status: 'open',
+                  priority: bead.priority || 2,
+                  issue_type: bead.issue_type || 'task',
+                  created_at: bead.created_at,
+                  transientState: transientBead.transientStatus === 'generating' ? 'generating' 
+                    : transientBead.transientStatus === 'error' ? 'error'
+                    : transientBead.transientStatus === 'completed' ? 'completed'
+                    : undefined,
+                  error: transientBead?.error
+                } : {
+                  id: bead.id,
+                  title: bead.title,
+                  description: bead.description || '',
+                  status: bead.status,
+                  priority: bead.priority || 2,
+                  issue_type: bead.issue_type || 'task',
+                  created_at: bead.created_at,
+                  transientState: 'resolved'
+                }
                 
                 return (
-                  <Card 
-                    key={bead.id} 
-                    className={`cursor-pointer transition-all duration-300 hover:scale-102 hover:shadow-lg ${col.cardBorder} backdrop-blur-sm border border-white/20 ${
-                      isGenerating ? 'bg-white/60 border-dashed opacity-70' : 'bg-white/80 hover:bg-white/90'
-                    } ${hasError ? 'bg-red-50 border-red-200' : ''} ${
-                      isCompleted ? 'bg-white/90 border-green-200' : ''
-                    }`}
+                  <BeadCard
+                    key={bead.id}
+                    bead={unifiedBead}
                     onClick={() => onBeadClick(bead)}
-                  >
-                    <CardHeader className="p-3 pb-0 space-y-1">
-                      {!isTransient && (
-                        <div className="flex justify-between items-start">
-                          <span className="font-mono text-xs text-muted-foreground font-bold">{bead.id}</span>
-                          <Badge className={`text-[10px] px-2 py-0 font-bold ${getPriorityColor(bead.priority, col.id)}`}>
-                            P{bead.priority}
-                          </Badge>
-                        </div>
-                      )}
-                      {isGenerating && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Generating title...
-                        </div>
-                      )}
-                      {isCompleted && (
-                        <div className="flex items-center gap-2 text-xs text-green-600">
-                          ✓ Title generated
-                        </div>
-                      )}
-                      {hasError && (
-                        <div className="space-y-2">
-                          <div className="text-xs text-red-600">
-                            Error: {transientBead?.error}
-                          </div>
-                          {onRetryGeneration && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onRetryGeneration(transientBead!.transientId)
-                              }}
-                              className="text-xs h-6 px-2"
-                            >
-                              <RefreshCw className="h-3 w-3 mr-1" />
-                              Retry
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                      {!isTransient && (
-                        <CardTitle className={`text-sm font-semibold leading-tight ${
-                          isGenerating ? 'text-gray-500 italic' : 'text-gray-800'
-                        }`}>
-                          {bead.title}
-                        </CardTitle>
-                      )}
-                    </CardHeader>
-                    <CardContent className="p-3 pt-2 text-xs text-gray-600 line-clamp-2">
-                      {bead.description || "No description"}
-                    </CardContent>
-                  </Card>
+                    onRetryGeneration={onRetryGeneration}
+                    columnCardBorder={col.cardBorder}
+                  />
                 )
               })}
             </div>

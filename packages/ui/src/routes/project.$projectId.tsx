@@ -70,11 +70,45 @@ function ProjectComponent() {
   }[connectionStatus]
 
   const allBeads = useMemo(() => {
-    const allTransient = transientBeads.map(b => ({
+    // Create a map of transient beads by their real ID (if available) or transient ID
+    const transientMap = new Map<string, typeof transientBeads[0]>()
+    transientBeads.forEach(b => {
+      const key = (b as any).realId || b.transientId
+      transientMap.set(key, b)
+    })
+    
+    // Get set of real IDs that have active transient states
+    const realIdsWithTransients = new Set<string>()
+    transientBeads.forEach(b => {
+      if ((b as any).realId) {
+        realIdsWithTransients.add((b as any).realId)
+      }
+    })
+    
+    // Filter out real beads that have active transient states, then merge
+    const mergedBeads = beads
+      .filter(bead => !realIdsWithTransients.has(bead.id))
+      .map(bead => {
+        const transient = transientMap.get(bead.id)
+        if (transient) {
+          // This bead has a transient state - use transient data but keep real ID
+          return {
+            ...bead,
+            transientId: transient.transientId,
+            transientStatus: transient.status,
+            error: transient.error,
+            retryCount: transient.retryCount
+          }
+        }
+        return bead
+      })
+    
+    // Add transient beads that don't have a real bead yet (by transient ID)
+    const orphanTransients = transientBeads.filter(b => !(b as any).realId).map(b => ({
       id: b.transientId,
       title: b.title || 'Generating title...',
       description: b.description,
-      status: 'open', // All transient beads show in open column
+      status: 'open',
       priority: b.priority || 2,
       issue_type: b.issue_type || 'task',
       created_at: b.created_at,
@@ -84,7 +118,27 @@ function ProjectComponent() {
       retryCount: b.retryCount
     }))
     
-    return [...allTransient, ...beads]
+    // Add transient beads that have a real ID - these replace the real bead temporarily
+    const transientWithRealId = transientBeads
+      .filter(b => (b as any).realId)
+      .map(b => {
+        const realId = (b as any).realId
+        return {
+          id: realId, // Use the real ID so React sees it as the same element
+          transientId: b.transientId,
+          title: b.title || 'Generating title...',
+          description: b.description,
+          status: 'open',
+          priority: b.priority || 2,
+          issue_type: b.issue_type || 'task',
+          created_at: b.created_at,
+          transientStatus: b.status,
+          error: b.error,
+          retryCount: b.retryCount
+        }
+      })
+    
+    return [...orphanTransients, ...transientWithRealId, ...mergedBeads]
   }, [beads, transientBeads])
 
   const filteredBeads = useMemo(() => {
@@ -125,9 +179,20 @@ function ProjectComponent() {
           title
         )
         
-        // Remove the transient bead since real bead is now updated
-        setTransientBeads(prev => prev.filter(b => b.transientId !== transientId))
-        setTimeout(() => router.invalidate(), 500)
+        // Update transient to completed state - smooth transition
+        setTransientBeads(prev => prev.map(b => 
+          b.transientId === transientId 
+            ? { ...b, title, status: 'completed' }
+            : b
+        ))
+        
+        // Remove transient state after real bead data loads
+        setTimeout(() => {
+          router.invalidate()
+          setTimeout(() => {
+            setTransientBeads(prev => prev.filter(b => b.transientId !== transientId))
+          }, 300)
+        }, 500)
       } else {
         // If no real ID, update to error state
         setTransientBeads(prev => prev.map(b => 
@@ -169,10 +234,10 @@ function ProjectComponent() {
         transientId
       })
       
-      // Store the real ID in the transient bead
+      // Store the real ID in the transient bead - this keeps the same element
       setTransientBeads(prev => prev.map(b => 
         b.transientId === transientId 
-          ? { ...b, realId: createdBead.id }
+          ? { ...b, realId: createdBead.id, title: createdBead.title || 'Generating title...' }
           : b
       ))
       
@@ -190,20 +255,22 @@ function ProjectComponent() {
           title
         )
         
-        // Update transient to show the generated title (looks like real bead now)
+        // Update transient to completed state - card transitions smoothly
         setTransientBeads(prev => prev.map(b => 
           b.transientId === transientId 
             ? { ...b, title, status: 'completed' }
             : b
         ))
         
-        // Invalidate to refresh the real bead data, then remove transient after a short delay
+        // Invalidate to refresh the real bead data
+        // The transient bead will be merged with the real bead via realId
         setTimeout(() => {
           router.invalidate()
-          // Remove transient after real bead data has loaded
+          // Remove transient state after real bead data has loaded
+          // This keeps the same card element but removes transient metadata
           setTimeout(() => {
             setTransientBeads(prev => prev.filter(b => b.transientId !== transientId))
-          }, 100)
+          }, 300)
         }, 500)
         
         return { transientId, realId: createdBead.id, title }
