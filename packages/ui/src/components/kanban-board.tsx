@@ -16,7 +16,6 @@ const COLUMNS = [
     borderColor: 'border-2 border-amber-300/50 dark:border-amber-700/50',
     headerBg: 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg shadow-amber-500/30',
     headerText: 'text-white',
-    cardBorder: 'hover:border-amber-400/60',
     icon: '🔥',
   },
   {
@@ -26,7 +25,6 @@ const COLUMNS = [
     borderColor: 'border-2 border-blue-300/50 dark:border-blue-700/50',
     headerBg: 'bg-gradient-to-r from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30',
     headerText: 'text-white',
-    cardBorder: 'hover:border-blue-400/60',
     icon: '🚀',
   },
   {
@@ -36,7 +34,6 @@ const COLUMNS = [
     borderColor: 'border-2 border-emerald-300/50 dark:border-emerald-700/50',
     headerBg: 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-lg shadow-emerald-500/30',
     headerText: 'text-white',
-    cardBorder: 'hover:border-emerald-400/60',
     icon: '✅',
   },
 ]
@@ -73,7 +70,7 @@ export function KanbanBoard({ beads, onBeadClick, onRetry }: KanbanBoardProps) {
   }
 
   return (
-    <div className="flex h-full gap-5 overflow-x-auto pb-4">
+    <div className="flex h-full gap-5 overflow-x-auto pb-4 px-1">
       {COLUMNS.map((col, index) => (
         <div
           key={col.id}
@@ -97,7 +94,7 @@ export function KanbanBoard({ beads, onBeadClick, onRetry }: KanbanBoardProps) {
           </div>
 
           {/* Cards container */}
-          <ScrollArea className="flex-1 p-3 custom-scrollbar relative z-10">
+          <ScrollArea className="flex-1 p-4 custom-scrollbar relative z-10">
             <div className="space-y-3">
               {getColumnBeads(col.id).map(bead => (
                 <BeadCard
@@ -105,7 +102,7 @@ export function KanbanBoard({ beads, onBeadClick, onRetry }: KanbanBoardProps) {
                   bead={toUnifiedBead(bead)}
                   onClick={() => onBeadClick(bead)}
                   onRetry={onRetry ? () => onRetry(bead) : undefined}
-                  columnCardBorder={col.cardBorder}
+                  columnCardBorder=""
                 />
               ))}
             </div>
